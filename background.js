@@ -286,7 +286,7 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
       SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. ASCII only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
     `;
 
@@ -353,7 +353,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
 SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. ASCII only. JSON: {"subject": "...", "body": "..."}
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
 
             const dynamicContent = `RECIPIENT:
