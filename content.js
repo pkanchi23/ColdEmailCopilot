@@ -206,6 +206,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'scrapeAndGenerate') {
         runGeneration('', null, request.includeQuestions || false, request.useWebGrounding || false);
         sendResponse({ started: true });
+    } else if (request.action === 'showOAuthNotification') {
+        showOAuthToast();
+        sendResponse({ shown: true });
+    } else if (request.action === 'hideOAuthNotification') {
+        hideOAuthToast();
+        sendResponse({ hidden: true });
     }
 });
 
@@ -246,6 +252,34 @@ const showError = (type, message) => {
     }
 
     alert(errorMsg);
+};
+
+// OAuth Toast Notification
+let oauthToast = null;
+
+const showOAuthToast = () => {
+    // Remove existing toast if any
+    if (oauthToast) {
+        oauthToast.remove();
+    }
+
+    // Create toast
+    oauthToast = document.createElement('div');
+    oauthToast.className = 'cec-oauth-toast';
+    oauthToast.innerHTML = `
+        <svg class="spinner" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="31.4 31.4" stroke-linecap="round" style="animation: dash 1.5s ease-in-out infinite;"/>
+        </svg>
+        <span class="cec-oauth-toast-text">Please sign in to Gmail to continue...</span>
+    `;
+    document.body.appendChild(oauthToast);
+};
+
+const hideOAuthToast = () => {
+    if (oauthToast) {
+        oauthToast.remove();
+        oauthToast = null;
+    }
 };
 
 // Helper to scrape current user's name
@@ -498,7 +532,13 @@ const createButton = () => {
         if (result === null) return;
 
         setLoadingState(true);
-        emailBtn.innerText = 'Generating...';
+        // Add spinner to button
+        emailBtn.innerHTML = `
+            <svg class="cec-btn-spinner" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"/>
+            </svg>
+            Generating...
+        `;
         emailBtn.disabled = true;
         emailBtn.style.opacity = '0.7';
 
