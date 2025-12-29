@@ -197,7 +197,7 @@ Two things I'm curious about:
       Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / "How's the new role going?" / "Most people I know..." / "Your sequencing suggests..." / Any vague question / Any mention of compensation/money` : ''}
       TIMING & PRECISION: Don't say "recently started/joined" unless <3 months ago. NEVER make assumptions about their current state (e.g., "swamped getting up to speed", "settling in", "ramping up") - you don't know this. Stick to facts from their profile.
       TONE: Always polite, respectful, and non-offensive. Never pushy or entitled.
-      FORMAT: Paragraph breaks between sections${includeQuestions ? `, ${questionFormattingRules}` : ''}. Sign: "Best, ${firstName}"
+      FORMAT: Use double line breaks (\n\n) ONLY between paragraphs/sections. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks${includeQuestions ? `, ${questionFormattingRules}` : ''}. Sign: "Best, ${firstName}"
         ` : '';
 
         // Build Question Mode instructions (for non-finance mode)
@@ -282,7 +282,7 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
       SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
     `;
 
@@ -315,7 +315,7 @@ CRITICAL RULES:
 8. SHOW research through specifics. Never say "I did research" or "impressed by career". No flattery.
 9. Questions reveal deep thought. Show analytical thinking, not surface curiosity.
 10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
-11. Keep paragraphs SHORT (2-3 sentences max). Use line breaks.
+11. FORMATTING: Keep paragraphs SHORT (2-3 sentences max). Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - let each paragraph flow naturally as a single block of text. Do not insert line breaks in the middle of sentences.
 
 CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
@@ -349,7 +349,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
 SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."}
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
 
             const dynamicContent = `RECIPIENT:
