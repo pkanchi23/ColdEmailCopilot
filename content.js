@@ -10,6 +10,32 @@ const scrapeProfile = () => {
     // Headline
     const headline = document.querySelector('.text-body-medium.break-words')?.innerText?.trim() || "";
 
+    // Location
+    // LinkedIn shows location near the top, often in a span with specific text pattern
+    let location = "";
+    try {
+        // Try multiple selectors for location (LinkedIn's DOM can vary)
+        const locationSelectors = [
+            '.text-body-small.inline.t-black--light.break-words',
+            '.pv-text-details__left-panel span.text-body-small',
+            '.pb2.pv-text-details__left-panel span'
+        ];
+
+        for (const selector of locationSelectors) {
+            const locationElement = document.querySelector(selector);
+            if (locationElement && locationElement.innerText) {
+                const text = locationElement.innerText.trim();
+                // Location typically doesn't have numbers/special chars like connection count
+                if (text && !text.includes('connections') && !text.includes('followers')) {
+                    location = text;
+                    break;
+                }
+            }
+        }
+    } catch (e) {
+        console.log('Error extracting location:', e);
+    }
+
     // About
     const aboutSection = document.querySelector('#about')?.parentElement;
     const about = aboutSection?.querySelectorAll('[aria-hidden="true"]')[1]?.innerText?.trim() ||
@@ -61,6 +87,7 @@ const scrapeProfile = () => {
     return {
         name,
         headline,
+        location,
         about,
         experience
     };
@@ -225,7 +252,7 @@ const createSaveModal = async () => {
             <div class="cec-modal-body">
                 ${hasLists ? `
                     <label class="cec-label">Select a list</label>
-                    <select id="cec-list-select" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; margin-bottom: 12px;">
+                    <select id="cec-list-select" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; margin-bottom: 12px; line-height: 1.5; height: auto; min-height: 40px; box-sizing: border-box; appearance: menulist; -webkit-appearance: menulist; -moz-appearance: menulist;">
                         ${listOptionsHTML}
                         <option value="__new__">+ Create New List</option>
                     </select>

@@ -158,6 +158,7 @@ async function handleGenerateDraft(requestData) {
       RECIPIENT PROFILE DATA:
       Name: ${profileData.name}
       Headline: ${profileData.headline}
+      ${profileData.location ? `Location: ${profileData.location}` : ''}
       About: ${profileData.about}
       Work Experience (chronological - most recent first):
       ${profileData.experience}
@@ -166,6 +167,11 @@ async function handleGenerateDraft(requestData) {
 
       SENDER CONTEXT:
       ${userContext || 'Not provided'}
+
+      LOCATION-BASED CALL TO ACTION:
+      - If the SENDER CONTEXT mentions a location AND the recipient's location suggests they are in the same city/metro area, you may suggest coffee or an in-person meeting
+      - If locations are different or unclear, suggest a call/video chat instead (e.g., "15-minute call", "quick Zoom")
+      - Never suggest coffee if you're not confident they're in the same location
 
       ${specialInstructions ? `SPECIAL INSTRUCTIONS:\n${specialInstructions}` : ''}
 
@@ -237,6 +243,7 @@ async function handleGenerateDraft(requestData) {
          - Be specific about what you want (15-min call, coffee, advice on specific topic)
          - Make it low-commitment and easy to say yes to
          - Acknowledge they're busy
+         - Follow the LOCATION-BASED CALL TO ACTION rules above (coffee only if same location)
          - Examples: "Would love to grab 15 minutes if you're open to it" or "Happy to work around your schedule"
       `}
 
