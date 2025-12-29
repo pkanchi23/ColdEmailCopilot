@@ -146,11 +146,12 @@ async function handleGenerateDraft(requestData) {
         }
 
         // Shared question formatting rules (used by both modes)
-        const questionFormattingRules = `QUESTION FORMAT: Compact numbered list with NO blank lines between items. Format as:
+        const questionFormattingRules = `QUESTION FORMAT: Write intro line, then IMMEDIATELY start numbered list on the NEXT line with NO blank line. Each question on its own line with NO blank lines between questions. Correct format:
 Two things I'm curious about:
 1. First question here...
 2. Second question here...
-NOT:
+
+WRONG (do NOT do this):
 Two things I'm curious about:
 
 1. First question...
@@ -273,8 +274,10 @@ Two things I'm curious about:
 
       CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
+      ${!includeQuestions ? 'CRITICAL: Do NOT include questions in this email. Skip questions entirely and go straight to asking for a quick call.' : ''}
+
       ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
-      ${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
+      ${exampleEmail ? `STYLE REF (for tone/style only, NOT structure): ${exampleEmail}${!includeQuestions ? ' - NOTE: Do NOT copy questions from this example. This email should NOT include questions.' : ''}` : ''}
 
       WARM CONNECTION: If known (mentor/colleague/met), reconnect naturally. Don't explain relationship.
 
@@ -306,7 +309,7 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
       SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
     `;
 
@@ -345,6 +348,8 @@ CRITICAL RULES:
 
 CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
+${!includeQuestions ? 'CRITICAL: Do NOT include questions in this email. Skip questions entirely and go straight to asking for a quick call.' : ''}
+
 WARM CONNECTION: If known (mentor/colleague/met), reconnect naturally. Don't explain relationship.
 
 SPARSE PROFILE: If limited data, focus on what exists, keep shorter.
@@ -375,7 +380,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
 SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."}
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
 
             const dynamicContent = `RECIPIENT:
