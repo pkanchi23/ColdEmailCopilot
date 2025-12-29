@@ -37,28 +37,31 @@ async function handleGenerateDraft(requestData) {
         // Extract first name for signature
         const firstName = finalSenderName.split(' ')[0];
 
+        // Shared question formatting rules (used by both modes)
+        const questionFormattingRules = `
+      QUESTION FORMATTING:
+      - QUESTIONS MUST BE FORMATTED AS A COMPACT NUMBERED LIST:
+        1. Question one...
+        2. Question two...
+        3. Question three...
+      - Do NOT use blank lines between questions
+      - Each question should be on its own line with a number`;
+
         // Build Finance Recruiting specific instructions
         const financeInstructions = financeRecruitingMode ? `
       FINANCE RECRUITING MODE - FORMAL NETWORKING EMAIL:
-      
+
       THE GOAL: Write an email SO thoughtful and insightful that the recipient feels almost COMPELLED to respond. They should think: "This person really did their homework. I want to talk to them."
-      
-      This email must be CONCISE but THOUGHTFUL (100-150 words). Be respectful of their time.
-      
+
+      This email must be CONCISE but THOUGHTFUL (${includeQuestions ? '125-150' : '100-125'} words). Be respectful of their time.
+
       BE EXTREMELY ANALYTICAL & THOUGHTFUL:
-      - **MAXIMIZE PROFILE USAGE**: You MUST use multiple specific details from their LinkedIn profile (specific deals, roles, transitions, universities, volunteer work). The more specific data points, the better.
-      - **CONNECT THE DOTS**: Do not just list shared facts. Analyze HOW your background connects to theirs. 
+      - **MAXIMIZE PROFILE USAGE**: Use multiple specific details from all available profile data (roles, transitions, career trajectory). The more specific data points, the better.
+      - **ANALYZE CAREER TRAJECTORY**: You have access to multiple work experiences - USE THEM. Look for pivots, progressions, and patterns across their career. Identify the "story arc" - what direction are they moving?
+      - **CONNECT THE DOTS**: Do not just list shared facts. Analyze HOW your background connects to theirs.
       - **AVOID FLUFF**: Never say things like "I came across your profile because you are doing the work I am about to start..." -> This is low signal. Instead, jump straight into the specific connection.
       - **BRIDGE THE GAP**: Example: "You went from [Company A] to [Company B] implies you prioritized [Skill X]. I am currently building [Skill X] at [My Company] and..."
-      
-      WARM CONNECTION RULE:
-      - If the "SENDER CONTEXT" or "SPECIAL INSTRUCTIONS" implies we already know each other (e.g. mentor/mentee, former colleagues):
-        - DO NOT formally introduce yourself (e.g. "My name is...").
-        - DO NOT explicitly explain the relationship like a robot (e.g. "I was your mentee...").
-        - DO act like an old friend reconnecting.
-        - BAD: "Pranav here -- I was one of your BAP IBD mentees back in sophomore year."
-        - GOOD: "It's been a while since BAP IBD! Hope you've been well."
-      
+
       STRUCTURE:
       1. INTRODUCTION: Concisely state your name, role, and background (1 sentence).
       2. CONNECTION: Connect your background to theirs using SPECIFIC details from their profile. Why does their specific path matter to you? Be analytical.
@@ -67,33 +70,32 @@ async function handleGenerateDraft(requestData) {
          - Then list 2-3 thoughtful questions as a COMPACT NUMBERED LIST.
          - IMPORTANT: Do NOT put blank lines between questions.` : '3. Ask to connect briefly to learn from their experience.'}
       ${includeQuestions ? '4' : '4'}. CLOSING: Express openness to a call but acknowledge they may be busy. Thank them sincerely.
-      
+
       SUBJECT LINE:
       - Formal and direct (e.g., "Incoming IB Analyst Seeking Advice", "Question from a Fellow [School] Alum")
       - Never casual or clickbait-y
-      
+
       TONE:
       - Professional and respectful, not casual
       - Slightly deferential but not sycophantic
       - Demonstrate intellectual curiosity and genuine interest in THEIR perspective
       - Show you've done your research
-      
+
       ${includeQuestions ? `QUESTION GUIDELINES:
       - **CRITICAL RELEVANCE BAR**: Only include questions if the recipient has **UNIQUE INSIGHT** (e.g., they made a specific transition you are considering) AND it ties **STRONGLY** to your background.
       - **NO BLACK BOX QUESTIONS**: Do not ask "what is it like" questions. Ask about *decisions* and *trade-offs*.
       - **INTERSECTION IS KEY**: The question must sit at the intersection of THEIR unique path and YOUR specific context.
       - **BE CONCISE**: Questions must be short and direct. Avoid wordy setups.
       - If you cannot find a *highly pertinent* question based on the data, SKIP the questions and just ask for a chat.
-      
+
       GOLD STANDARD QUESTION EXAMPLES (Use these as inspiration only - adapt to their specific background):
       ${(() => {
                     const pool = [
-
                         "At what point did you feel the job shift from 'executing work' to 'owning outcomes,' and what triggered that shift?",
                         "Looking back, what behaviors mattered most for being seen as 'reliable' early on versus 'trusted' later?",
                         "How did you think about choosing industry coverage versus a product group early on, and how reversible did that decision feel?",
                         "In practice, how much does deep industry knowledge really compound versus being excellent at a core product like M&A or LevFin?",
-                        "For someone starting in coverage, what’s the fastest way to build real industry judgment versus just learning the buzzwords?",
+                        "For someone starting in coverage, what's the fastest way to build real industry judgment versus just learning the buzzwords?",
                         "Did you ever feel pigeonholed by your group choice, and if so, how did you manage that internally?",
                         "How do strong coverage bankers differentiate themselves once product execution becomes table stakes?"
                     ];
@@ -101,7 +103,7 @@ async function handleGenerateDraft(requestData) {
                     const shuffled = pool.sort(() => 0.5 - Math.random());
                     return shuffled.slice(0, 3).map(q => `- "${q}"`).join('\n      ');
                 })()}
-      
+
       - Good: "How do you think about impact within your career?" or "Looking back, what skills would you focus on improving during [stage]?"
       - Good: "What do you think was overrated during [path]? I feel like there's a lot of 'conventional wisdom' that isn't always the best advice."
       - Bad: "What's your take on current deal flow?" or "How do you evaluate companies?" (too job-specific)
@@ -110,56 +112,57 @@ async function handleGenerateDraft(requestData) {
       TIMING RULE:
       - Do NOT mention that someone "recently started" or "just joined" unless they started less than 1 year ago
       - If start date is unclear, do not reference recency at all
-      
+
       FORMATTING:
       - Use proper paragraph breaks between sections
-      ${includeQuestions ? `- QUESTIONS MUST BE FORMATTED AS A COMPACT NUMBERED LIST:
-        1. Question one...
-        2. Question two...
-        3. Question three...
-        (Do NOT use blank lines between items)` : ''}
+      ${includeQuestions ? `- ${questionFormattingRules}` : ''}
       - Sign off with "Best," and first name only
         ` : '';
 
-        // Build Question Mode instructions
+        // Build Question Mode instructions (for non-finance mode)
         const questionInstructions = includeQuestions ? `
       QUESTION MODE ENABLED:
       Include 1-3 thoughtful, high-quality questions in the email.
 
-      QUESTION RULES:
+      QUESTION QUALITY STANDARDS:
+      - **CRITICAL RELEVANCE BAR**: Only include questions if the recipient has **UNIQUE INSIGHT** (e.g., they made a specific transition you are considering) AND it ties **STRONGLY** to your background.
+      - **NO BLACK BOX QUESTIONS**: Do not ask "what is it like" questions. Ask about *decisions* and *trade-offs*.
+      - **INTERSECTION IS KEY**: The question must sit at the intersection of THEIR unique path and YOUR specific context.
       - Questions should show genuine intellectual curiosity
       - They should be specific to THIS person's unique journey/decisions
       - They should be questions YOU actually want answered
-      - Frame the email around asking these questions
-      - End with "would love to hop on a call to discuss" or similar
+      - **BE CONCISE**: Questions must be short and direct. Avoid wordy setups.
+      - If you cannot find a *highly pertinent* question based on the data, SKIP the questions and just ask for a chat.
 
-      QUESTION FORMATTING:
-      - QUESTIONS MUST BE FORMATTED AS A COMPACT NUMBERED LIST:
-        1. Question one...
-        2. Question two...
-        3. Question three...
-      - Do NOT use blank lines between questions
-      - Each question should be on its own line with a number
+      ${questionFormattingRules}
 
-      QUESTION EXAMPLES (adapt to this person):
-      - "How did you think about the tradeoff between stability at [Big Corp] vs. the upside at [Startup]?"
+      QUESTION EXAMPLES (adapt to this person's specific background):
+      - "How do you think about balancing [specific trade-off relevant to their role] vs [alternative]?"
+      - "What's been the biggest surprise in [specific transition from their experience] that you didn't expect?"
+      - "At what point did you realize [insight about their career path] - was there a specific moment?"
+      - "Your move from [Company A] to [Company B] suggests you prioritized [X] - how did you think through that decision?"
+      - "I'm curious how [Company/Team] approaches [specific problem relevant to their role] - does it match what you expected before joining?"
       - "What surprised you most about the transition from [Role A] to [Role B]?"
-      - "I'm curious how you balanced [specific challenge] -- any frameworks that helped?"
+      - "I'm curious how you balanced [specific challenge from their background] -- any frameworks that helped?"
 
       BAD QUESTIONS (avoid):
       - "Can I pick your brain?" (too vague)
       - "What do you do?" (lazy, they already wrote it)
       - "Any advice?" (too broad)
+      - "What's it like at [Company]?" (black box question)
         ` : '';
 
         const prompt = `
       You are a human writing a genuine, personal cold email. NOT a marketer. NOT a salesperson. Just a real person reaching out.
 
-      RECIPIENT:
+      RECIPIENT PROFILE DATA:
       Name: ${profileData.name}
       Headline: ${profileData.headline}
       About: ${profileData.about}
-      Recent Experience: ${profileData.experience}
+      Work Experience (chronological - most recent first):
+      ${profileData.experience}
+
+      IMPORTANT: Multiple work experiences are provided above. Analyze the FULL career trajectory, not just the current role. Look for patterns, transitions, and the career "story arc."
 
       SENDER CONTEXT:
       ${userContext || 'Not provided'}
@@ -167,6 +170,22 @@ async function handleGenerateDraft(requestData) {
       ${specialInstructions ? `SPECIAL INSTRUCTIONS:\n${specialInstructions}` : ''}
 
       ${exampleEmail ? `STYLE REFERENCE (match the vibe, not the words):\n${exampleEmail}` : ''}
+
+      WARM CONNECTION RULE (applies to ALL modes):
+      - If the "SENDER CONTEXT" or "SPECIAL INSTRUCTIONS" implies we already know each other (e.g. mentor/mentee, former colleagues, met before):
+        - DO NOT formally introduce yourself (e.g. "My name is...").
+        - DO NOT explicitly explain the relationship like a robot (e.g. "I was your mentee...").
+        - DO act like an old friend or colleague reconnecting naturally.
+        - BAD: "Pranav here -- I was one of your BAP IBD mentees back in sophomore year."
+        - GOOD: "It's been a while since BAP IBD! Hope you've been well."
+
+      SPARSE PROFILE HANDLING:
+      - If profile data is limited (minimal About section, only 1-2 experiences):
+        - Acknowledge the limitation gracefully
+        - Focus on what IS available
+        - Ask questions to learn more rather than making assumptions
+        - Keep it shorter and more open-ended
+        - Example: "I'd love to learn more about your journey into [role]"
 
       ${financeInstructions}
 
@@ -180,17 +199,26 @@ async function handleGenerateDraft(requestData) {
       - Sound natural, not robotic
 
       ${financeRecruitingMode ? '' : `CASUAL MODE RULES:
-      - Keep sentences short and punchy
-      - Sound like you're texting a professional friend
 
-      FIND THE CORE INSIGHT:
-      Think: "What would make this person actually WANT to grab coffee with me?"
-      - Look for shared struggles, not just shared interests
-      - Find the tension or inflection point in their career
-      - Connect YOUR journey to THEIR journey at a deeper level
-      - The goal is mutual curiosity, not a sales pitch
+      1. CAREER TRAJECTORY ANALYSIS:
+         - You have access to multiple work experiences - USE THEM ALL
+         - Look for pivots, progressions, and patterns across their career
+         - Identify the "story arc" - what direction are they moving?
+         - Reference specific transitions between roles when relevant
 
-      EXAMPLES OF DEPTH:
+      2. TONE & STYLE:
+         - Keep sentences short and punchy
+         - Sound conversational but professional (like messaging a colleague you respect)
+         - Avoid being overly formal, but don't be too casual either
+
+      3. FIND THE CORE INSIGHT:
+         Think: "What would make this person actually WANT to grab coffee with me?"
+         - Look for shared struggles, not just shared interests
+         - Find the tension or inflection point in their career
+         - Connect YOUR journey to THEIR journey at a deeper level
+         - The goal is mutual curiosity, not a sales pitch
+
+         EXAMPLES OF DEPTH:
 
          SURFACE LEVEL (BAD):
          "I saw you work at Stripe. I'm interested in fintech too."
@@ -204,24 +232,35 @@ async function handleGenerateDraft(requestData) {
          Another example:
          SURFACE: "You went to Wharton and work in PE."
          INSIGHT: "Your path from Wharton to ops at that growth fund is uncommon -- most of your classmates probably went portco or banking. I'm curious what made you bet on the operator side early."
+
+      4. CALL TO ACTION:
+         - Be specific about what you want (15-min call, coffee, advice on specific topic)
+         - Make it low-commitment and easy to say yes to
+         - Acknowledge they're busy
+         - Examples: "Would love to grab 15 minutes if you're open to it" or "Happy to work around your schedule"
       `}
 
-      4. SIGNATURE:
+      ${financeRecruitingMode ? '' : `
+      SIGNATURE:
          Best,
          ${firstName}
 
-      5. SUBJECT LINE:
-         ${financeRecruitingMode ? '- Formal and direct (e.g., "Incoming IB Analyst Seeking Advice")' : '- Reference the specific insight, not generic interest'}
+      SUBJECT LINE EXAMPLES:
+         - "Your [Company A] → [Company B] move"
+         - "Question about [specific thing from their profile]"
+         - "Fellow [shared experience] with a question"
+         - Reference the specific insight, not generic interest
          - Match the tone
          - Never use "Quick Question", "Reaching Out", or "Coffee?"
+      `}
 
-      6. FORMATTING:
-         - ${financeRecruitingMode ? '100-150 words' : 'Under 100 words'}
+      FORMATTING REQUIREMENTS:
+         - ${financeRecruitingMode ? (includeQuestions ? '125-150 words' : '100-125 words') : (includeQuestions ? '125-150 words' : '75-100 words')}
          - NEVER use special characters like curly quotes, em-dashes, or fancy apostrophes
          - Use only standard ASCII: straight quotes ('), double hyphens (--)
          - Return JSON: {"subject": "...", "body": "..."}
 
-      7. ALMA MATER RULE:
+      ALMA MATER RULE:
          - NEVER mention the recipient's college, university, or school unless the sender (user context) attended the SAME institution
          - Only reference shared alma mater as a connection point, never just theirs
     `;
