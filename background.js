@@ -1,4 +1,27 @@
+/**
+ * Import utilities for service worker
+ */
+importScripts('utils.js');
+
+/**
+ * Initialize rate limiter - 10 requests per minute
+ */
+const apiRateLimiter = new RateLimiter(10, 60000);
+
+/**
+ * Initialize logger
+ */
+(async () => {
+  await Logger.init();
+})();
+
 // --- Web Grounding Helper ---
+/**
+ * Perform web search to find recent news about profile
+ * @param {Object} profileData - LinkedIn profile data
+ * @param {string} anthropicApiKey - Anthropic API key
+ * @returns {Promise<string|null>} Recent news or null
+ */
 async function performWebSearch(profileData, anthropicApiKey) {
     // Construct search query based on profile
     const company = profileData.experience?.split('\n')[0]?.split(' at ')[1]?.split('(')[0]?.trim();
@@ -11,7 +34,10 @@ async function performWebSearch(profileData, anthropicApiKey) {
     const searchQuery = `${name} ${company} news recent funding portfolio`;
 
     try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        // Check rate limit
+        await apiRateLimiter.checkLimit();
+
+        const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
                 'x-api-key': anthropicApiKey,
@@ -30,11 +56,11 @@ async function performWebSearch(profileData, anthropicApiKey) {
                     type: 'web_search_20241101'
                 }]
             })
-        });
+        }, 30000);
 
         const data = await response.json();
         if (data.error) {
-            console.error('Web search error:', data.error);
+            Logger.error('Web search error:', data.error);
             return null;
         }
 
@@ -48,22 +74,40 @@ async function performWebSearch(profileData, anthropicApiKey) {
 
         return textContent;
     } catch (error) {
-        console.error('Web search failed:', error);
+        Logger.error('Web search failed:', error);
         return null;
     }
 }
 
+/**
+ * Message listener for extension communication
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'generateDraft') {
         handleGenerateDraft(request.data)
             .then(sendResponse)
-            .catch((error) => sendResponse({ success: false, error: error.message }));
+            .catch((error) => {
+                Logger.error('Generation failed:', error);
+                const userMessage = formatErrorMessage(error);
+                sendResponse({ success: false, error: userMessage });
+            });
         return true; // Will respond asynchronously
     }
 });
 
+/**
+ * Handle draft generation request
+ * @param {Object} requestData - Request data containing profile and settings
+ * @returns {Promise<Object>} Generation result
+ */
 async function handleGenerateDraft(requestData) {
     try {
+        // Check online status
+        requireOnline();
+
+        // Check rate limit
+        await apiRateLimiter.checkLimit();
+
         const profileData = requestData.profile;
         const specialInstructions = requestData.instructions || '';
         let dynamicSenderName = requestData.senderName;
@@ -90,13 +134,13 @@ async function handleGenerateDraft(requestData) {
 
         // Debug mode logging
         if (debugMode) {
-            console.log('=== DEBUG MODE ===');
-            console.log('Profile Data:', profileData);
-            console.log('Sender Name:', finalSenderName);
-            console.log('User Context:', userContext);
-            console.log('Model:', model);
-            console.log('Tone:', tone);
-            console.log('Finance Mode:', financeRecruitingMode);
+            Logger.log('=== DEBUG MODE ===');
+            Logger.log('Profile Data:', profileData);
+            Logger.log('Sender Name:', finalSenderName);
+            Logger.log('User Context:', userContext);
+            Logger.log('Model:', model);
+            Logger.log('Tone:', tone);
+            Logger.log('Finance Mode:', financeRecruitingMode);
         }
 
         // Extract first name for signature
@@ -106,11 +150,11 @@ async function handleGenerateDraft(requestData) {
         let webGroundingContext = null;
         if (useWebGrounding && model.startsWith('claude-') && anthropicApiKey) {
             if (debugMode) {
-                console.log('=== WEB GROUNDING ENABLED ===');
+                Logger.log('=== WEB GROUNDING ENABLED ===');
             }
             webGroundingContext = await performWebSearch(profileData, anthropicApiKey);
             if (debugMode && webGroundingContext) {
-                console.log('Web Grounding Result:', webGroundingContext);
+                Logger.log('Web Grounding Result:', webGroundingContext);
             }
         }
 
@@ -137,10 +181,10 @@ async function handleGenerateDraft(requestData) {
             if (emailPatternCache[cacheKey] && emailPatternCache[cacheKey].expiresAt > Date.now()) {
                 cachedPattern = emailPatternCache[cacheKey];
                 if (debugMode) {
-                    console.log('=== CACHED PATTERN FOUND ===');
-                    console.log('Company:', cachedPattern.company);
-                    console.log('Role:', cachedPattern.role);
-                    console.log('Cached Subject:', cachedPattern.subject);
+                    Logger.log('=== CACHED PATTERN FOUND ===');
+                    Logger.log('Company:', cachedPattern.company);
+                    Logger.log('Role:', cachedPattern.role);
+                    Logger.log('Cached Subject:', cachedPattern.subject);
                 }
             }
         }
@@ -315,9 +359,9 @@ Two things I'm curious about:
 
         // Debug logging for prompt
         if (debugMode) {
-            console.log('=== FULL PROMPT ===');
-            console.log(prompt);
-            console.log('==================');
+            Logger.log('=== FULL PROMPT ===');
+            Logger.log(prompt);
+            Logger.log('==================');
         }
 
         let content;
@@ -423,7 +467,7 @@ ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
 ${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
 ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPattern.company}):\nSubject: ${cachedPattern.subject}\nBody (adapt, don't copy): ${cachedPattern.body.substring(0, 200)}...` : ''}`;
 
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: {
                     'x-api-key': anthropicApiKey,
@@ -462,7 +506,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                 throw new Error('OpenAI API Key missing. Please set it in options.');
             }
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${openAiApiKey}`,
@@ -493,7 +537,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             }
             emailDraft = JSON.parse(cleanContent);
         } catch (e) {
-            console.warn('JSON parsing failed, using raw content:', e);
+            Logger.warn('JSON parsing failed, using raw content:', e);
             emailDraft = { subject: "Intro", body: content };
         }
 
@@ -509,10 +553,10 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // Debug logging for generated draft
         if (debugMode) {
-            console.log('=== GENERATED DRAFT ===');
-            console.log('Subject:', emailDraft.subject);
-            console.log('Body:', emailDraft.body);
-            console.log('====================');
+            Logger.log('=== GENERATED DRAFT ===');
+            Logger.log('Subject:', emailDraft.subject);
+            Logger.log('Body:', emailDraft.body);
+            Logger.log('====================');
         }
 
         // --- EMAIL PREDICTION LOGIC ---
@@ -1368,7 +1412,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             try {
                 const experienceParts = profileData.experience.split('\n')[0].split(' at ');
                 if (experienceParts.length < 2) {
-                    console.log('Cannot parse company from experience');
+                    Logger.log('Cannot parse company from experience');
                 } else {
                     const currentCompany = experienceParts[1].split('(')[0].trim();
 
@@ -1409,12 +1453,12 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                                     }
 
                                     if (debugMode) {
-                                        console.log('=== EMAIL PREDICTION ===');
-                                        console.log('Profile company:', currentCompany);
-                                        console.log('Matched to:', companyMatch.company);
-                                        console.log('Match score:', bestScore);
-                                        console.log('Primary:', predictedEmail);
-                                        console.log('BCC:', predictedBcc);
+                                        Logger.log('=== EMAIL PREDICTION ===');
+                                        Logger.log('Profile company:', currentCompany);
+                                        Logger.log('Matched to:', companyMatch.company);
+                                        Logger.log('Match score:', bestScore);
+                                        Logger.log('Primary:', predictedEmail);
+                                        Logger.log('BCC:', predictedBcc);
                                     }
                                 }
                             }
@@ -1422,7 +1466,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                     }
                 }
             } catch (err) {
-                console.log('Email prediction failed:', err);
+                Logger.log('Email prediction failed:', err);
             }
         }
 
@@ -1453,6 +1497,46 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             }
         });
 
+        // Send webhook notification if configured
+        const { webhookUrl } = await chrome.storage.local.get('webhookUrl');
+        if (webhookUrl) {
+            try {
+                const webhookPayload = {
+                    event: 'email_generated',
+                    timestamp: new Date().toISOString(),
+                    data: {
+                        subject: emailDraft.subject,
+                        body: emailDraft.body,
+                        recipient: {
+                            name: profileData.name,
+                            headline: profileData.headline,
+                            email: predictedEmail || null,
+                            profileUrl: profileData.url || null
+                        },
+                        metadata: {
+                            tone: settings.tone,
+                            model: settings.model,
+                            includeQuestions: includeQuestions,
+                            financeMode: settings.financeRecruitingMode
+                        }
+                    }
+                };
+
+                await fetchWithTimeout(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(webhookPayload)
+                }, 10000); // 10s timeout for webhook
+
+                Logger.log('Webhook notification sent successfully');
+            } catch (webhookError) {
+                // Log error but don't fail the email generation
+                Logger.error('Webhook notification failed:', webhookError);
+            }
+        }
+
         // Smart caching: Save successful email pattern by company+role
         if (companyRole) {
             const cacheKey = `email_cache_${companyRole.company}_${companyRole.role}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
@@ -1479,11 +1563,11 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // --- GMAIL API INTEGRATION ---
         if (debugMode) {
-            console.log('=== DEBUG MODE: Creating Gmail Draft ===');
-            console.log('To:', predictedEmail || '(no recipient)');
-            console.log('Subject:', emailDraft.subject);
-            console.log('Body:', emailDraft.body);
-            console.log('=== Proceeding with draft creation ===');
+            Logger.log('=== DEBUG MODE: Creating Gmail Draft ===');
+            Logger.log('To:', predictedEmail || '(no recipient)');
+            Logger.log('Subject:', emailDraft.subject);
+            Logger.log('Body:', emailDraft.body);
+            Logger.log('=== Proceeding with draft creation ===');
         }
 
         const token = await getAuthToken();
@@ -1496,7 +1580,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
         return { success: true };
 
     } catch (err) {
-        console.error('Error generating draft:', err);
+        Logger.error('Error generating draft:', err);
         return { success: false, error: err.message };
     }
 }
@@ -1506,11 +1590,11 @@ async function getAuthToken() {
     const { gmailToken, gmailTokenExpiry } = await chrome.storage.local.get(['gmailToken', 'gmailTokenExpiry']);
 
     if (gmailToken && gmailTokenExpiry && Date.now() < gmailTokenExpiry) {
-        console.log('Using cached Gmail token');
+        Logger.log('Using cached Gmail token');
         return gmailToken;
     }
 
-    console.log('Fetching new Gmail token...');
+    Logger.log('Fetching new Gmail token...');
 
     // Show OAuth notification to user
     try {
@@ -1519,7 +1603,7 @@ async function getAuthToken() {
             chrome.tabs.sendMessage(tabs[0].id, { action: 'showOAuthNotification' }).catch(() => { });
         }
     } catch (e) {
-        console.log('Could not show OAuth notification:', e);
+        Logger.log('Could not show OAuth notification:', e);
     }
 
     return new Promise((resolve, reject) => {
@@ -1544,7 +1628,7 @@ async function getAuthToken() {
                         chrome.tabs.sendMessage(tab.id, { action: 'hideOAuthNotification' }).catch(() => { });
                     });
                 } catch (e) {
-                    console.log('Could not hide OAuth notification:', e);
+                    Logger.log('Could not hide OAuth notification:', e);
                 }
 
                 if (chrome.runtime.lastError) {
@@ -1602,7 +1686,7 @@ function createMimeMessage(subject, body, toEmail, bccEmail) {
 
 
 async function createDraft(token, rawMessage) {
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
+    const response = await fetchWithTimeout('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,

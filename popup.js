@@ -1,3 +1,10 @@
+/**
+ * Initialize logger
+ */
+(async () => {
+  await Logger.init();
+})();
+
 // ==========================
 // UTILITIES
 // ==========================
