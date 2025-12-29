@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            width: 250px;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        #generateBtn {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        #generateBtn:hover {
+            background-color: #1d4ed8;
+        }
+
+        #optionsBtn {
+            background-color: #f3f4f6;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        #optionsBtn:hover {
+            background-color: #e5e7eb;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            min-height: 15px;
+        }
+
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6b7280;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Saved List Styles */
+        .saved-item {
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background-color: #fff;
+        }
+
+        .saved-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .saved-headline {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .saved-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .saved-actions button {
+            padding: 4px 8px;
+            font-size: 11px;
+            margin-bottom: 0;
+            width: auto;
+        }
+
+        .saved-delete {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tabs">
+        <button class="tab active" data-view="draft">Draft Email</button>
+        <button class="tab" data-view="saved">Saved List</button>
+    </div>
+
+    <!-- Draft View -->
+    <div id="draft" class="view active">
+        <img src="icons/icon48.png" style="width: 32px; height: 32px; margin-bottom: 10px;">
+        <h2>ColdEmailCopilot</h2>
+
+        <button id="generateBtn">Draft Email Now</button>
+        <button id="optionsBtn">Settings</button>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin: 10px 0; text-align: left;">
+            <input type="checkbox" id="includeQuestions" style="width: 16px; height: 16px; margin: 0;">
+            <label for="includeQuestions" style="font-size: 12px; color: #374151; cursor: pointer;">Include 1-3
+                thoughtful questions</label>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <!-- Saved View -->
+    <div id="saved" class="view">
+        <div id="savedList">
+            <!-- Items injected here -->
+        </div>
+        <div id="emptyState" style="color: #6b7280; font-size: 13px; margin-top: 20px;">
+            No profiles saved yet.<br>Click "Save" on a LinkedIn profile.
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>ColdEmailCopilot Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      padding: 40px;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #f3f4f6;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      color: #111827;
+      font-size: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    input[type="password"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.15s ease-in-out;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    input[type="password"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.15s;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    .success {
+      color: #059669;
+    }
+
+    .error {
+      color: #dc2626;
+    }
+
+    .info {
+      font-size: 0.85em;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>ColdEmailCopilot Configuration</h1>
+    <div class="form-group">
+      <label for="apiKey">OpenAI API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-...">
+      <p class="info">Your key is stored locally on your device and never sent anywhere else.</p>
+    </div>
+    <div class="form-group">
+      <label for="model">AI Model</label>
+      <select id="model" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
+        <option value="gpt-5.2">GPT-5.2 (Recommended) - ~$0.02/email</option>
+        <option value="gpt-4o">GPT-4o - ~$0.01/email</option>
+        <option value="gpt-4-turbo">GPT-4 Turbo - ~$0.02/email</option>
+        <option value="gpt-4">GPT-4 - ~$0.06/email</option>
+        <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Cheapest) - ~$0.002/email</option>
+        <option value="o1-preview">o1-preview (Reasoning) - ~$0.15/email</option>
+        <option value="o1-mini">o1-mini (Fast Reasoning) - ~$0.03/email</option>
+        <option value="custom">Custom Model...</option>
+      </select>
+      <input type="text" id="customModel" placeholder="Enter model name (e.g. gpt-5.2)"
+        style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; margin-top: 8px; display: none; box-sizing: border-box;">
+      <p class="info">Select a model or choose "Custom" to enter any model name.</p>
+    </div>
+
+    <div class="form-group">
+      <label for="tone">Email Tone</label>
+      <select id="tone" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
+        <option value="Casual & Friendly">Casual & Friendly</option>
+        <option value="Professional & Direct">Professional & Direct</option>
+        <option value="Persuasive & Sales-y">Persuasive & Sales-y</option>
+        <option value="Urgent">Urgent</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="userContext">About Me / Value Proposition</label>
+      <textarea id="userContext" rows="5" placeholder="I am a... My company does... We are looking to..."></textarea>
+      <p class="info">This context will be provided to the AI to help write the email from your perspective.</p>
+    </div>
+
+    <div class="form-group">
+      <label for="exampleEmail">Example Email (One-shot Learning)</label>
+      <textarea id="exampleEmail" rows="5"
+        placeholder="Paste a successful cold email here to use as a style template..."></textarea>
+      <p class="info">The AI will mimic the structure and style of this email.</p>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+      <input type="checkbox" id="financeRecruitingMode" style="width: 18px; height: 18px;">
+      <label for="financeRecruitingMode" style="margin-bottom: 0; cursor: pointer;">Finance Recruiting Mode</label>
+    </div>
+    <p class="info" style="margin-top: -10px;">Enables strict, formal language and professional subject lines for
+      finance networking.</p>
+
+    <button id="save">Save Settings</button>
+    <div id="status"></div>
+  </div>
+  <script src="options.js"></script>
+</body>
+
+</html>
