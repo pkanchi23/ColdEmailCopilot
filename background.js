@@ -232,6 +232,8 @@ Two things I'm curious about:
       8. Questions under 25 words. Cut context, keep question.
       9. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
       10. FORBIDDEN: "buyside", "sellside", "sell-side", "buy-side". Use specific terms.
+      11. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
+      12. NO SPECIAL CHARACTERS: Never use arrows (→), bullets (•), em-dashes (—), or Unicode symbols. Use only standard ASCII: hyphens (-), asterisks (*), regular quotes.
 
       RECIPIENT:
       Name: ${profileData.name}
@@ -304,7 +306,7 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
       SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
     `;
 
@@ -338,6 +340,8 @@ CRITICAL RULES:
 9. Questions reveal deep thought. Show analytical thinking, not surface curiosity.
 10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
 11. FORMATTING: Keep paragraphs SHORT (2-3 sentences max). Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - let each paragraph flow naturally as a single block of text. Do not insert line breaks in the middle of sentences.
+12. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
+13. NO SPECIAL CHARACTERS: Never use arrows (→), bullets (•), em-dashes (—), or Unicode symbols. Use only standard ASCII: hyphens (-), asterisks (*), regular quotes.
 
 CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
@@ -371,7 +375,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
 SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."}
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
 
             const dynamicContent = `RECIPIENT:
