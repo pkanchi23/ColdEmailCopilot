@@ -97,22 +97,12 @@
 <body>
   <div class="container">
     <h1>ColdEmailCopilot Configuration</h1>
-    <div class="form-group">
-      <label for="apiKey">OpenAI API Key</label>
-      <input type="password" id="apiKey" placeholder="sk-...">
-      <p class="info">Your key is stored locally on your device and never sent anywhere else.</p>
-    </div>
+
     <div class="form-group">
       <label for="model">AI Model</label>
       <select id="model" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
-        <option value="gpt-5.2">GPT-5.2 (Recommended) - ~$0.02/email</option>
-        <option value="gpt-4o">GPT-4o - ~$0.01/email</option>
-        <option value="gpt-4-turbo">GPT-4 Turbo - ~$0.02/email</option>
-        <option value="gpt-4">GPT-4 - ~$0.06/email</option>
-        <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Cheapest) - ~$0.002/email</option>
-        <option value="o1-preview">o1-preview (Reasoning) - ~$0.15/email</option>
-        <option value="o1-mini">o1-mini (Fast Reasoning) - ~$0.03/email</option>
-        <option value="custom">Custom Model...</option>
+        <option value="gpt-5.2">GPT-5.2 (OpenAI)</option>
+        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
       </select>
       <input type="text" id="customModel" placeholder="Enter model name (e.g. gpt-5.2)"
         style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; margin-top: 8px; display: none; box-sizing: border-box;">
@@ -148,6 +138,17 @@
     </div>
     <p class="info" style="margin-top: -10px;">Enables strict, formal language and professional subject lines for
       finance networking.</p>
+    <div class="form-group" style="margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+      <label for="apiKey">OpenAI API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-...">
+    </div>
+
+    <div class="form-group">
+      <label for="anthropicApiKey">Claude API Key (Anthropic)</label>
+      <input type="password" id="anthropicApiKey" placeholder="sk-ant-...">
+      <p class="info">Keys are stored locally on your device.</p>
+    </div>
+
 
     <button id="save">Save Settings</button>
     <div id="status"></div>

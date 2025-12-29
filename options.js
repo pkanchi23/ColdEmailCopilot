@@ -1,6 +1,7 @@
 // Saves options to chrome.storage
 const saveOptions = () => {
   const apiKey = document.getElementById('apiKey').value;
+  const anthropicApiKey = document.getElementById('anthropicApiKey').value;
   const userContext = document.getElementById('userContext').value;
   const modelSelect = document.getElementById('model').value;
   const customModel = document.getElementById('customModel').value;
@@ -9,8 +10,8 @@ const saveOptions = () => {
   const exampleEmail = document.getElementById('exampleEmail').value;
   const financeRecruitingMode = document.getElementById('financeRecruitingMode').checked;
 
-  if (!apiKey) {
-    showStatus('Please enter an API Key.', 'error');
+  if (!apiKey && !anthropicApiKey) {
+    showStatus('Please enter at least one API Key.', 'error');
     return;
   }
 
@@ -22,6 +23,7 @@ const saveOptions = () => {
   chrome.storage.local.set(
     {
       openAiApiKey: apiKey,
+      anthropicApiKey: anthropicApiKey,
       userContext: userContext,
       model: model,
       tone: tone,
@@ -40,6 +42,7 @@ const restoreOptions = () => {
   chrome.storage.local.get(
     {
       openAiApiKey: '',
+      anthropicApiKey: '',
       userContext: '',
       model: 'gpt-5.2',
       tone: 'Casual & Friendly',
@@ -48,6 +51,9 @@ const restoreOptions = () => {
     },
     (items) => {
       document.getElementById('apiKey').value = items.openAiApiKey;
+      if (items.anthropicApiKey) {
+        document.getElementById('anthropicApiKey').value = items.anthropicApiKey;
+      }
       document.getElementById('userContext').value = items.userContext;
       document.getElementById('tone').value = items.tone;
       document.getElementById('exampleEmail').value = items.exampleEmail;

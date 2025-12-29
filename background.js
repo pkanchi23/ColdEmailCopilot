@@ -20,18 +20,19 @@ async function handleGenerateDraft(requestData) {
 
         const {
             openAiApiKey,
+            anthropicApiKey,
             userContext,
             senderName: storedSenderName,
             model = 'gpt-5.2',
             tone = 'Casual & Friendly',
             exampleEmail,
             financeRecruitingMode = false
-        } = await chrome.storage.local.get(['openAiApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode']);
+        } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode']);
 
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
-        if (!openAiApiKey) {
-            throw new Error('API Key missing. Please set it in the extension options.');
+        if (!openAiApiKey && !anthropicApiKey) {
+            throw new Error('No API Key found. Please set at least one key in extension options.');
         }
         // Extract first name for signature
         const firstName = finalSenderName.split(' ')[0];
@@ -206,26 +207,61 @@ async function handleGenerateDraft(requestData) {
          - Only reference shared alma mater as a connection point, never just theirs
     `;
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${openAiApiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: [{ role: "user", content: prompt }],
-                response_format: { type: "json_object" }
-            })
-        });
+        let content;
 
-        const data = await response.json();
+        // --- ANTHROPIC / CLAUDE API CALL ---
+        if (model.startsWith('claude-')) {
+            if (!anthropicApiKey) {
+                throw new Error('Claude API Key missing. Please set it in options.');
+            }
 
-        if (data.error) {
-            throw new Error(data.error.message);
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'x-api-key': anthropicApiKey,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json',
+                    'anthropic-dangerous-direct-browser-access': 'true' // Requesting from extension
+                },
+                body: JSON.stringify({
+                    model: model,
+                    max_tokens: 1024,
+                    messages: [{ role: "user", content: prompt }],
+                    system: "You are a helpful assistant that outputs only JSON."
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
+            content = data.content[0].text;
         }
+        // --- OPENAI API CALL ---
+        else {
+            if (!openAiApiKey) {
+                throw new Error('OpenAI API Key missing. Please set it in options.');
+            }
 
-        const content = data.choices[0].message.content;
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${openAiApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [{ role: "user", content: prompt }],
+                    response_format: { type: "json_object" }
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
+            content = data.choices[0].message.content;
+        }
 
         let emailDraft;
         try {
