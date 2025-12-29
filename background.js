@@ -82,7 +82,16 @@ async function handleGenerateDraft(requestData) {
         }
 
         // Shared question formatting rules (used by both modes)
-        const questionFormattingRules = `QUESTION FORMAT: Compact numbered list (1. Question... 2. Question...) with no blank lines between.`;
+        const questionFormattingRules = `QUESTION FORMAT: Compact numbered list with NO blank lines between items. Format as:
+Two things I'm curious about:
+1. First question here...
+2. Second question here...
+NOT:
+Two things I'm curious about:
+
+1. First question...
+
+2. Second question...`;
 
         // Build Finance Recruiting specific instructions
         const financeInstructions = financeRecruitingMode ? `
@@ -94,12 +103,12 @@ async function handleGenerateDraft(requestData) {
       - Analyze patterns/pivots across their full career arc
       - Connect YOUR background to THEIRS analytically
       - No fluff like "I came across your profile..." - jump to specific connection
-      - Ex: "Your [Company A]→[Company B] move suggests you prioritized [X]. I'm building [X] at..."
+      - Ex: "Your move from [Company A] to [Company B] suggests you prioritized [X]. I'm building [X] at..."
 
       STRUCTURE:
-      1. Intro: Name, role, background (1 sentence)
+      1. Intro: Casual introduction with name, role, background (1 sentence). NEVER use "Name here -" format (e.g., "Pranav here -"). Just introduce naturally.
       2. Connection: Specific details from profile, analytical link to your journey
-      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list` : '3. Ask to connect briefly'}
+      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list with NO blank lines` : '3. Ask to connect briefly'}
       4. Closing: Express openness, acknowledge busy schedule, thank sincerely
 
       SUBJECT: Formal/direct (e.g., "Incoming IB Analyst Seeking Advice", "Question from Fellow [School] Alum"). Never casual.
@@ -108,11 +117,13 @@ async function handleGenerateDraft(requestData) {
       ${includeQuestions ? `QUESTIONS (2-3 only if highly relevant):
       - Must show UNIQUE INSIGHT from their specific path + STRONG tie to your context
       - Ask about decisions/trade-offs, NOT "what is it like"
+      - Focus on CAREER and WORK decisions - NEVER mention compensation, comp, salary, or money
       - Must be concise and specific to THEIR journey
       - Skip if no highly pertinent question exists - just ask for chat
-      Examples: "When did shift from 'executing' to 'owning outcomes' happen?" / "How reversible did [specific choice] feel?" / "What was overrated about [path stage]?"
-      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?"` : ''}
+      Examples: "When did shift from 'executing' to 'owning outcomes' happen?" / "How reversible did [specific choice] feel?" / "What made you prioritize [X] over [Y]?" / "What was overrated about [path stage]?"
+      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / Any mention of compensation/money` : ''}
       TIMING: Don't say "recently started/joined" unless <1yr ago. Skip if unclear.
+      TONE: Always polite, respectful, and non-offensive. Never pushy or entitled.
       FORMAT: Paragraph breaks between sections${includeQuestions ? `, ${questionFormattingRules}` : ''}. Sign: "Best, ${firstName}"
         ` : '';
 
@@ -121,11 +132,12 @@ async function handleGenerateDraft(requestData) {
       QUESTION MODE (1-3 questions):
       - Only if they have UNIQUE INSIGHT + STRONG tie to your context
       - Ask about decisions/trade-offs, NOT "what is it like"
+      - Focus on CAREER and WORK - NEVER mention compensation, comp, salary, or money
       - Must sit at intersection of THEIR path + YOUR context
       - Be concise, specific to THEIR journey. Skip if no highly pertinent question.
       ${questionFormattingRules}
-      Examples: "How did you balance [trade-off]?" / "Biggest surprise in [transition]?" / "Your [A]→[B] move suggests [X] - how did you decide?"
-      Bad: "Pick your brain?" / "Any advice?" / "What's it like?"` : '';
+      Examples: "How did you balance [trade-off]?" / "Biggest surprise in [transition]?" / "Your move from [A] to [B] suggests [X] - how did you decide?"
+      Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / Any mention of compensation` : '';
 
         const prompt = `
       You're a real person (NOT marketer/salesperson) writing a genuine cold email.
@@ -162,17 +174,20 @@ async function handleGenerateDraft(requestData) {
       Write like a human (no jargon, natural not robotic).
 
       ${financeRecruitingMode ? '' : `CASUAL MODE:
-      1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions.
+      1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
       2. Short punchy sentences. Conversational but professional (like respected colleague).
-      3. Core insight: What makes them WANT coffee with you? Find shared struggles, career tensions, deep connection (YOUR journey ↔ THEIR journey). Mutual curiosity, not sales.
+      3. NEVER use "Name here -" introduction format (e.g., "Pranav here -"). Just introduce naturally and casually.
+      4. Core insight: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales.
          Bad: "I saw you work at Stripe. Interested in fintech."
-         Better: "Your Goldman→Series A move caught my eye - wrestling with similar decision."
-         Best: "Your banking→startup post hit home. JPM 3yrs, 'golden handcuffs' keeps me up. How did you think through math vs mission?"
-      4. CTA: Specific (15-min call/coffee/advice), low-commitment, acknowledge busy. Follow location rules (coffee only if same location).
+         Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
+         Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
+      5. CTA: Specific (15-min call preferred, or coffee if same location), low-commitment, acknowledge busy. Follow location rules strictly (coffee ONLY if same location, otherwise phone call).
+      6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
+      7. NEVER mention compensation, comp, salary, or money in any context.
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-      SUBJECT: "[A]→[B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+      SUBJECT: "[A] to [B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
       FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
       ALMA MATER: Never mention their school unless sender attended SAME one.
@@ -213,17 +228,20 @@ GOAL: ${financeRecruitingMode ? 'Career advice + potential call' : '15-min intro
 Write like a human (no jargon, natural not robotic).
 
 ${financeRecruitingMode ? '' : `CASUAL MODE:
-1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions.
+1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
 2. Short punchy sentences. Conversational but professional (like respected colleague).
-3. Core insight: What makes them WANT coffee with you? Find shared struggles, career tensions, deep connection (YOUR journey ↔ THEIR journey). Mutual curiosity, not sales.
+3. NEVER use "Name here -" introduction format (e.g., "Pranav here -"). Just introduce naturally and casually.
+4. Core insight: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales.
    Bad: "I saw you work at Stripe. Interested in fintech."
-   Better: "Your Goldman→Series A move caught my eye - wrestling with similar decision."
-   Best: "Your banking→startup post hit home. JPM 3yrs, 'golden handcuffs' keeps me up. How did you think through math vs mission?"
-4. CTA: Specific (15-min call/coffee/advice), low-commitment, acknowledge busy. Follow location rules (coffee only if same location).
+   Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
+   Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
+5. CTA: Specific (15-min call preferred, or coffee if same location), low-commitment, acknowledge busy. Follow location rules strictly (coffee ONLY if same location, otherwise phone call).
+6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
+7. NEVER mention compensation, comp, salary, or money in any context.
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-SUBJECT: "[A]→[B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+SUBJECT: "[A] to [B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
 FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Never mention their school unless sender attended SAME one.`;
