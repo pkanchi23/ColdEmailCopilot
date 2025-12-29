@@ -17,7 +17,8 @@ const state = {
     buttonInjected: false,
     lastInjectedUrl: null,
     debounceTimer: null,
-    intervalId: null
+    intervalId: null,
+    observer: null
 };
 
 // ==========================
@@ -204,8 +205,10 @@ const scrapeProfile = () => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'scrapeAndGenerate') {
-        runGeneration('', null, request.includeQuestions || false, request.useWebGrounding || false);
-        sendResponse({ started: true });
+        runGeneration('', null, request.includeQuestions || false, request.useWebGrounding || false)
+            .then(() => sendResponse({ started: true }))
+            .catch(err => sendResponse({ started: false, error: err.message }));
+        return true; // Will respond asynchronously
     } else if (request.action === 'showOAuthNotification') {
         showOAuthToast();
         sendResponse({ shown: true });
@@ -240,21 +243,94 @@ const runGeneration = async (instructions = '', senderName = null, includeQuesti
     }
 };
 
+// ==========================
+// TOAST NOTIFICATION SYSTEM
+// ==========================
+
+const showToast = (message, type = 'info', duration = 5000) => {
+    // Remove any existing general toasts (not OAuth toasts)
+    const existingToasts = document.querySelectorAll('.cec-toast:not(.cec-oauth-toast)');
+    existingToasts.forEach(toast => toast.remove());
+
+    const toast = document.createElement('div');
+    toast.className = 'cec-toast';
+
+    // Set icon and color based on type
+    let icon = '';
+    let bgColor = '#2563eb';
+
+    if (type === 'error') {
+        icon = '✕';
+        bgColor = '#dc2626';
+    } else if (type === 'success') {
+        icon = '✓';
+        bgColor = '#16a34a';
+    } else if (type === 'warning') {
+        icon = '⚠';
+        bgColor = '#ea580c';
+    } else {
+        icon = 'ℹ';
+        bgColor = '#2563eb';
+    }
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${bgColor};
+        color: white;
+        padding: 14px 24px;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto;
+        font-size: 14px;
+        font-weight: 500;
+        animation: slideDown 0.3s ease-out;
+        max-width: 500px;
+    `;
+
+    toast.innerHTML = `
+        <span style="font-size: 18px;">${icon}</span>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto-remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, -20px)';
+            toast.style.transition = 'all 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    return toast;
+};
+
 const showError = (type, message) => {
     let errorMsg = 'An error occurred. Please try again.';
 
     if (type === 'SCRAPE_FAILED') {
         errorMsg = 'Could not read profile data. Try refreshing the page.';
     } else if (type === 'API_ERROR') {
-        errorMsg = `API error: ${message}\n\nPlease check your API key in settings.`;
+        errorMsg = `API error: ${message}. Please check your API key in settings.`;
     } else if (type === 'GENERATION_FAILED') {
-        errorMsg = `Failed to generate email: ${message}\n\nPlease reload the page and try again.`;
+        errorMsg = `Failed to generate email: ${message}. Please reload the page and try again.`;
     }
 
-    alert(errorMsg);
+    showToast(errorMsg, 'error', 8000);
 };
 
-// OAuth Toast Notification
+// ==========================
+// OAUTH TOAST NOTIFICATION
+// ==========================
 let oauthToast = null;
 let oauthToastTimeout = null;
 
@@ -322,11 +398,12 @@ const scrapeCurrentUser = () => {
 // MODALS
 // ==========================
 
-let modalResolve = null;
-let saveModalResolve = null;
-
 const createModal = () => {
-    if (document.querySelector('.cec-modal-overlay')) return;
+    // Remove any existing modal to prevent race conditions
+    const existingModal = document.querySelector('.cec-modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
 
     const overlay = document.createElement('div');
     overlay.className = 'cec-modal-overlay';
@@ -362,48 +439,49 @@ const createModal = () => {
 
     document.body.appendChild(overlay);
 
-    const close = () => {
-        overlay.classList.remove('open');
-        if (modalResolve) modalResolve(null);
-        modalResolve = null;
-    };
-
-    const submit = () => {
-        const text = document.getElementById('cec-context').value;
-        const includeQuestions = document.getElementById('cec-include-questions').checked;
-        overlay.classList.remove('open');
-        if (modalResolve) modalResolve({ instructions: text, includeQuestions: includeQuestions });
-        modalResolve = null;
-    };
-
-    overlay.querySelector('.cec-close-btn').addEventListener('click', close);
-    overlay.querySelector('#cec-cancel').addEventListener('click', close);
-    overlay.querySelector('#cec-submit').addEventListener('click', submit);
-
-    // Keyboard shortcuts
-    overlay.querySelector('#cec-context').addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-            e.preventDefault();
-            submit();
-        }
-    });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) close();
-    });
+    // Return promise and handlers
+    return { overlay, promise: null };
 };
 
 const openModal = async () => {
-    createModal();
-    const overlay = document.querySelector('.cec-modal-overlay');
+    const { overlay } = createModal();
     const textarea = document.getElementById('cec-context');
     textarea.value = '';
     textarea.focus();
 
     overlay.classList.add('open');
 
+    // Create promise with scoped resolve
     return new Promise((resolve) => {
-        modalResolve = resolve;
+        const close = () => {
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 200);
+            resolve(null);
+        };
+
+        const submit = () => {
+            const text = document.getElementById('cec-context').value;
+            const includeQuestions = document.getElementById('cec-include-questions').checked;
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 200);
+            resolve({ instructions: text, includeQuestions: includeQuestions });
+        };
+
+        overlay.querySelector('.cec-close-btn').addEventListener('click', close);
+        overlay.querySelector('#cec-cancel').addEventListener('click', close);
+        overlay.querySelector('#cec-submit').addEventListener('click', submit);
+
+        // Keyboard shortcuts
+        overlay.querySelector('#cec-context').addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                submit();
+            }
+        });
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
     });
 };
 
@@ -481,53 +559,53 @@ const createSaveModal = async () => {
         });
     }
 
-    const close = () => {
-        overlay.classList.remove('open');
-        setTimeout(() => overlay.remove(), 200);
-        if (saveModalResolve) saveModalResolve(null);
-        saveModalResolve = null;
-    };
-
-    const confirm = async () => {
-        let listName;
-
-        if (listSelect && listSelect.value !== '__new__') {
-            listName = listSelect.value;
-        } else {
-            listName = newListInput.value.trim();
-            if (!listName) {
-                newListInput.style.borderColor = '#ef4444';
-                return;
-            }
-            const { profileLists = [] } = await chrome.storage.local.get('profileLists');
-            if (!profileLists.includes(listName)) {
-                profileLists.push(listName);
-                await chrome.storage.local.set({ profileLists });
-            }
-        }
-
-        overlay.classList.remove('open');
-        setTimeout(() => overlay.remove(), 200);
-        if (saveModalResolve) saveModalResolve(listName);
-        saveModalResolve = null;
-    };
-
-    overlay.querySelector('.cec-close-btn').addEventListener('click', close);
-    overlay.querySelector('#cec-save-cancel').addEventListener('click', close);
-    overlay.querySelector('#cec-save-confirm').addEventListener('click', confirm);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) close();
-    });
-
     return overlay;
 };
 
 const openSaveModal = async () => {
     const overlay = await createSaveModal();
+    const newListInput = overlay.querySelector('#cec-new-list-name');
+    const listSelect = overlay.querySelector('#cec-list-select');
+
     overlay.classList.add('open');
 
+    // Create promise with scoped resolve
     return new Promise((resolve) => {
-        saveModalResolve = resolve;
+        const close = () => {
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 200);
+            resolve(null);
+        };
+
+        const confirm = async () => {
+            let listName;
+
+            if (listSelect && listSelect.value !== '__new__') {
+                listName = listSelect.value;
+            } else {
+                listName = newListInput.value.trim();
+                if (!listName) {
+                    newListInput.style.borderColor = '#ef4444';
+                    return;
+                }
+                const { profileLists = [] } = await chrome.storage.local.get('profileLists');
+                if (!profileLists.includes(listName)) {
+                    profileLists.push(listName);
+                    await chrome.storage.local.set({ profileLists });
+                }
+            }
+
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 200);
+            resolve(listName);
+        };
+
+        overlay.querySelector('.cec-close-btn').addEventListener('click', close);
+        overlay.querySelector('#cec-save-cancel').addEventListener('click', close);
+        overlay.querySelector('#cec-save-confirm').addEventListener('click', confirm);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
     });
 };
 
@@ -550,29 +628,51 @@ const createButton = () => {
 
     emailBtn.addEventListener('click', async () => {
         const originalText = emailBtn.innerText;
+        let generationTimeout = null;
 
-        const result = await openModal();
-        if (result === null) return;
+        const resetButton = () => {
+            emailBtn.innerText = originalText;
+            emailBtn.disabled = false;
+            emailBtn.style.opacity = '1';
+            setLoadingState(false);
+            if (generationTimeout) {
+                clearTimeout(generationTimeout);
+                generationTimeout = null;
+            }
+        };
 
-        setLoadingState(true);
-        // Add spinner to button
-        emailBtn.innerHTML = `
-            <svg class="cec-btn-spinner" viewBox="0 0 50 50">
-                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"/>
-            </svg>
-            Generating...
-        `;
-        emailBtn.disabled = true;
-        emailBtn.style.opacity = '0.7';
+        try {
+            const result = await openModal();
+            if (result === null) return;
 
-        const senderName = scrapeCurrentUser();
+            setLoadingState(true);
+            // Add spinner to button
+            emailBtn.innerHTML = `
+                <svg class="cec-btn-spinner" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"/>
+                </svg>
+                Generating...
+            `;
+            emailBtn.disabled = true;
+            emailBtn.style.opacity = '0.7';
 
-        await runGeneration(result.instructions, senderName, result.includeQuestions);
+            // Auto-recovery after 60 seconds
+            generationTimeout = setTimeout(() => {
+                console.log('ColdEmailCopilot: Generation timeout, resetting button');
+                resetButton();
+                showToast('Generation timed out. Please try again.', 'error');
+            }, 60000);
 
-        emailBtn.innerText = originalText;
-        emailBtn.disabled = false;
-        emailBtn.style.opacity = '1';
-        setLoadingState(false);
+            const senderName = scrapeCurrentUser();
+
+            await runGeneration(result.instructions, senderName, result.includeQuestions);
+
+            resetButton();
+        } catch (err) {
+            console.error('ColdEmailCopilot: Button click error:', err);
+            resetButton();
+            showToast('An error occurred. Please try again.', 'error');
+        }
     });
 
     // Save Button
@@ -666,6 +766,11 @@ const injectButton = () => {
             clearInterval(state.intervalId);
             state.intervalId = null;
         }
+
+        // Stop the observer once injected
+        if (state.observer) {
+            state.observer.disconnect();
+        }
     }
 };
 
@@ -704,6 +809,9 @@ const initializeButtonInjection = () => {
         // Only react if we haven't injected yet
         if (!state.buttonInjected) {
             debouncedInject();
+        } else {
+            // Stop observing once button is injected
+            observer.disconnect();
         }
     });
 
@@ -711,6 +819,9 @@ const initializeButtonInjection = () => {
         childList: true,
         subtree: true
     });
+
+    // Store observer in state so we can disconnect it from other places
+    state.observer = observer;
 
     // Fallback interval (will stop after first successful injection)
     state.intervalId = setInterval(() => {
