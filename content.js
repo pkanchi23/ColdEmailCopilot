@@ -722,17 +722,18 @@ const createButton = () => {
 const injectButton = () => {
     const currentUrl = window.location.href;
 
-    // If URL changed, remove old buttons
+    // If URL changed, remove old buttons and reset state
     if (state.lastInjectedUrl && state.lastInjectedUrl !== currentUrl) {
         const existingContainer = document.querySelector('.cold-email-copilot-container');
         if (existingContainer) {
             existingContainer.remove();
         }
         state.buttonInjected = false;
+        console.log('ColdEmailCopilot: URL changed, resetting button injection state');
     }
     state.lastInjectedUrl = currentUrl;
 
-    // Don't inject if already injected
+    // Don't inject if already injected for this URL
     if (state.buttonInjected) return;
 
     // Try to find action bar
@@ -760,17 +761,6 @@ const injectButton = () => {
         actionPanel.appendChild(btnContainer);
         console.log('ColdEmailCopilot: Buttons injected successfully');
         state.buttonInjected = true;
-
-        // Stop the interval once injected
-        if (state.intervalId) {
-            clearInterval(state.intervalId);
-            state.intervalId = null;
-        }
-
-        // Stop the observer once injected
-        if (state.observer) {
-            state.observer.disconnect();
-        }
     }
 };
 
@@ -795,6 +785,48 @@ document.addEventListener('keydown', (e) => {
 // INITIALIZATION
 // ==========================
 
+// Detect URL changes for SPA navigation
+let lastUrl = window.location.href;
+const detectUrlChange = () => {
+    const currentUrl = window.location.href;
+    if (currentUrl !== lastUrl) {
+        console.log('ColdEmailCopilot: URL change detected', lastUrl, '->', currentUrl);
+        lastUrl = currentUrl;
+
+        // Reset state for new page
+        state.buttonInjected = false;
+
+        // Clear cache for old URL to force fresh scraping
+        state.profileCache.clear();
+
+        // Trigger button injection after short delay to let page settle
+        setTimeout(() => {
+            injectButton();
+        }, CONFIG.INITIAL_DELAY);
+    }
+};
+
+// Watch for URL changes using multiple methods for reliability
+// Method 1: Listen to popstate (back/forward navigation)
+window.addEventListener('popstate', detectUrlChange);
+
+// Method 2: Override pushState and replaceState (SPA navigation)
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+history.pushState = function(...args) {
+    originalPushState.apply(this, args);
+    detectUrlChange();
+};
+
+history.replaceState = function(...args) {
+    originalReplaceState.apply(this, args);
+    detectUrlChange();
+};
+
+// Method 3: Poll for URL changes as fallback
+setInterval(detectUrlChange, 1000);
+
 // Wait for DOM to be ready before first injection attempt
 const initializeButtonInjection = () => {
     // Initial injection with small delay for DOM to settle
@@ -802,17 +834,12 @@ const initializeButtonInjection = () => {
         injectButton();
     }, CONFIG.INITIAL_DELAY);
 
-    // Debounced observer for DOM changes
+    // Debounced observer for DOM changes - keep running to handle SPA navigation
     const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
 
     const observer = new MutationObserver((mutations) => {
-        // Only react if we haven't injected yet
-        if (!state.buttonInjected) {
-            debouncedInject();
-        } else {
-            // Stop observing once button is injected
-            observer.disconnect();
-        }
+        // Always check for injection opportunities (don't stop after first injection)
+        debouncedInject();
     });
 
     observer.observe(document.body, {
@@ -820,17 +847,12 @@ const initializeButtonInjection = () => {
         subtree: true
     });
 
-    // Store observer in state so we can disconnect it from other places
+    // Store observer in state
     state.observer = observer;
 
-    // Fallback interval (will stop after first successful injection)
+    // Continuous interval to catch any missed injection opportunities
     state.intervalId = setInterval(() => {
-        if (!state.buttonInjected) {
-            injectButton();
-        } else {
-            clearInterval(state.intervalId);
-            state.intervalId = null;
-        }
+        injectButton();
     }, CONFIG.BUTTON_INJECT_RETRY);
 };
 
