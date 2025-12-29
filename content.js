@@ -15,13 +15,48 @@ const scrapeProfile = () => {
     const about = aboutSection?.querySelectorAll('[aria-hidden="true"]')[1]?.innerText?.trim() ||
         document.querySelector('.inline-show-more-text--is-collapsed')?.innerText?.trim() || "";
 
-    // Experience (Getting the latest role)
+    // Experience (Getting multiple roles)
     const experienceSection = document.querySelector('#experience')?.parentElement;
-    const latestRole = experienceSection?.querySelector('.display-flex.align-items-center.mr1.t-bold span[aria-hidden="true"]')?.innerText?.trim() || "";
-    const latestCompany = experienceSection?.querySelector('.t-14.t-normal span[aria-hidden="true"]')?.innerText?.trim() || "";
+    const experiences = [];
 
-    // Construct a simple experience string
-    const experience = latestRole && latestCompany ? `${latestRole} at ${latestCompany}` : "See profile for details";
+    if (experienceSection) {
+        // Try to find all experience list items
+        const experienceItems = experienceSection.querySelectorAll('ul > li.artdeco-list__item');
+
+        experienceItems.forEach((item, index) => {
+            // Limit to first 5 experiences to avoid too much data
+            if (index >= 5) return;
+
+            try {
+                // Try to extract role and company from each item
+                const roleElement = item.querySelector('.display-flex.align-items-center.mr1.t-bold span[aria-hidden="true"]');
+                const companyElement = item.querySelector('.t-14.t-normal span[aria-hidden="true"]');
+                const durationElement = item.querySelector('.t-14.t-normal.t-black--light span[aria-hidden="true"]');
+
+                const role = roleElement?.innerText?.trim();
+                const company = companyElement?.innerText?.trim();
+                const duration = durationElement?.innerText?.trim();
+
+                if (role && company) {
+                    const expString = duration ? `${role} at ${company} (${duration})` : `${role} at ${company}`;
+                    experiences.push(expString);
+                }
+            } catch (e) {
+                console.log('Error parsing experience item:', e);
+            }
+        });
+    }
+
+    // Fallback to single experience if multiple extraction failed
+    if (experiences.length === 0 && experienceSection) {
+        const latestRole = experienceSection.querySelector('.display-flex.align-items-center.mr1.t-bold span[aria-hidden="true"]')?.innerText?.trim() || "";
+        const latestCompany = experienceSection.querySelector('.t-14.t-normal span[aria-hidden="true"]')?.innerText?.trim() || "";
+        if (latestRole && latestCompany) {
+            experiences.push(`${latestRole} at ${latestCompany}`);
+        }
+    }
+
+    const experience = experiences.length > 0 ? experiences.join('\n') : "See profile for details";
 
     return {
         name,

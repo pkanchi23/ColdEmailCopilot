@@ -125,19 +125,27 @@ async function handleGenerateDraft(requestData) {
         const questionInstructions = includeQuestions ? `
       QUESTION MODE ENABLED:
       Include 1-3 thoughtful, high-quality questions in the email.
-      
+
       QUESTION RULES:
       - Questions should show genuine intellectual curiosity
       - They should be specific to THIS person's unique journey/decisions
       - They should be questions YOU actually want answered
       - Frame the email around asking these questions
       - End with "would love to hop on a call to discuss" or similar
-      
+
+      QUESTION FORMATTING:
+      - QUESTIONS MUST BE FORMATTED AS A COMPACT NUMBERED LIST:
+        1. Question one...
+        2. Question two...
+        3. Question three...
+      - Do NOT use blank lines between questions
+      - Each question should be on its own line with a number
+
       QUESTION EXAMPLES (adapt to this person):
       - "How did you think about the tradeoff between stability at [Big Corp] vs. the upside at [Startup]?"
       - "What surprised you most about the transition from [Role A] to [Role B]?"
       - "I'm curious how you balanced [specific challenge] -- any frameworks that helped?"
-      
+
       BAD QUESTIONS (avoid):
       - "Can I pick your brain?" (too vague)
       - "What do you do?" (lazy, they already wrote it)
