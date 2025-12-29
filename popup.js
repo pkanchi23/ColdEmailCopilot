@@ -30,6 +30,7 @@ tabs.forEach(tab => {
 
 // --- Saved Profiles Logic ---
 let currentListFilter = 'all';
+let currentSearchQuery = '';
 
 const loadSavedProfiles = async () => {
     const { savedProfiles = [], profileLists = [] } = await chrome.storage.local.get(['savedProfiles', 'profileLists']);
@@ -55,17 +56,37 @@ const loadSavedProfiles = async () => {
         loadSavedProfiles();
     });
 
-    // Filter profiles
+    // Filter by list
     let filteredProfiles = savedProfiles;
     if (currentListFilter !== 'all') {
         filteredProfiles = savedProfiles.filter(p => p.list === currentListFilter);
     }
 
+    // Filter by search query
+    if (currentSearchQuery) {
+        const query = currentSearchQuery.toLowerCase();
+        filteredProfiles = filteredProfiles.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const headline = (p.headline || '').toLowerCase();
+            const location = (p.location || '').toLowerCase();
+            const experience = (p.experience || '').toLowerCase();
+
+            return name.includes(query) ||
+                   headline.includes(query) ||
+                   location.includes(query) ||
+                   experience.includes(query);
+        });
+    }
+
     if (filteredProfiles.length === 0) {
         emptyState.style.display = 'block';
-        emptyState.innerHTML = currentListFilter === 'all'
-            ? 'No profiles saved yet.<br>Click "Save" on a LinkedIn profile.'
-            : `No profiles in "${currentListFilter}" list.`;
+        if (currentSearchQuery) {
+            emptyState.innerHTML = `No profiles match "${currentSearchQuery}"`;
+        } else {
+            emptyState.innerHTML = currentListFilter === 'all'
+                ? 'No profiles saved yet.<br>Click "Save" on a LinkedIn profile.'
+                : `No profiles in "${currentListFilter}" list.`;
+        }
         return;
     }
 
@@ -99,6 +120,79 @@ const loadSavedProfiles = async () => {
         container.appendChild(div);
     });
 };
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchProfiles');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentSearchQuery = e.target.value;
+            loadSavedProfiles();
+        });
+    }
+});
+
+// Export functionality
+document.getElementById('exportBtn')?.addEventListener('click', async () => {
+    const { savedProfiles = [], profileLists = [] } = await chrome.storage.local.get(['savedProfiles', 'profileLists']);
+
+    const exportData = {
+        version: 1,
+        exportDate: new Date().toISOString(),
+        profiles: savedProfiles,
+        lists: profileLists
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `coldemail-profiles-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+// Import functionality
+document.getElementById('importBtn')?.addEventListener('click', () => {
+    document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const importData = JSON.parse(text);
+
+        if (!importData.profiles || !Array.isArray(importData.profiles)) {
+            alert('Invalid import file format');
+            return;
+        }
+
+        const { savedProfiles = [], profileLists = [] } = await chrome.storage.local.get(['savedProfiles', 'profileLists']);
+
+        // Merge profiles (avoid duplicates by URL)
+        const existingUrls = new Set(savedProfiles.map(p => p.url));
+        const newProfiles = importData.profiles.filter(p => !existingUrls.has(p.url));
+
+        // Merge lists
+        const mergedLists = [...new Set([...profileLists, ...(importData.lists || [])])];
+
+        await chrome.storage.local.set({
+            savedProfiles: [...savedProfiles, ...newProfiles],
+            profileLists: mergedLists
+        });
+
+        alert(`Imported ${newProfiles.length} new profiles`);
+        loadSavedProfiles();
+    } catch (error) {
+        alert('Error importing file: ' + error.message);
+    }
+
+    // Reset file input
+    e.target.value = '';
+});
 
 
 document.getElementById('generateBtn').addEventListener('click', async () => {

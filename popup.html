@@ -157,6 +157,15 @@
 
     <!-- Saved View -->
     <div id="saved" class="view">
+        <input type="text" id="searchProfiles" placeholder="Search by name, company, location..."
+            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; margin-bottom: 10px; box-sizing: border-box;">
+
+        <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+            <button id="exportBtn" style="flex: 1; padding: 6px; font-size: 11px; background: #10b981; color: white;">Export</button>
+            <button id="importBtn" style="flex: 1; padding: 6px; font-size: 11px; background: #6366f1; color: white;">Import</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+
         <div id="savedList">
             <!-- Items injected here -->
         </div>

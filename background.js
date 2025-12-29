@@ -26,14 +26,27 @@ async function handleGenerateDraft(requestData) {
             model = 'gpt-5.2',
             tone = 'Casual & Friendly',
             exampleEmail,
-            financeRecruitingMode = false
-        } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode']);
+            financeRecruitingMode = false,
+            debugMode = false
+        } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
 
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
         if (!openAiApiKey && !anthropicApiKey) {
             throw new Error('No API Key found. Please set at least one key in extension options.');
         }
+
+        // Debug mode logging
+        if (debugMode) {
+            console.log('=== DEBUG MODE ===');
+            console.log('Profile Data:', profileData);
+            console.log('Sender Name:', finalSenderName);
+            console.log('User Context:', userContext);
+            console.log('Model:', model);
+            console.log('Tone:', tone);
+            console.log('Finance Mode:', financeRecruitingMode);
+        }
+
         // Extract first name for signature
         const firstName = finalSenderName.split(' ')[0];
 
@@ -159,6 +172,7 @@ async function handleGenerateDraft(requestData) {
       Name: ${profileData.name}
       Headline: ${profileData.headline}
       ${profileData.location ? `Location: ${profileData.location}` : ''}
+      ${profileData.education ? `Education: ${profileData.education}` : ''}
       About: ${profileData.about}
       Work Experience (chronological - most recent first):
       ${profileData.experience}
@@ -272,6 +286,13 @@ async function handleGenerateDraft(requestData) {
          - Only reference shared alma mater as a connection point, never just theirs
     `;
 
+        // Debug logging for prompt
+        if (debugMode) {
+            console.log('=== FULL PROMPT ===');
+            console.log(prompt);
+            console.log('==================');
+        }
+
         let content;
 
         // --- ANTHROPIC / CLAUDE API CALL ---
@@ -343,6 +364,14 @@ async function handleGenerateDraft(requestData) {
             emailDraft = { subject: "Intro", body: content };
         }
 
+        // Debug logging for generated draft
+        if (debugMode) {
+            console.log('=== GENERATED DRAFT ===');
+            console.log('Subject:', emailDraft.subject);
+            console.log('Body:', emailDraft.body);
+            console.log('====================');
+        }
+
         // --- EMAIL PREDICTION LOGIC ---
         let predictedEmail = null;
         if (financeRecruitingMode && profileData.experience && profileData.name) {
@@ -402,6 +431,15 @@ async function handleGenerateDraft(requestData) {
         }
 
         // --- GMAIL API INTEGRATION ---
+        if (debugMode) {
+            console.log('=== DEBUG MODE: Skipping Gmail ===');
+            console.log('Draft would have been created with:');
+            console.log('To:', predictedEmail || '(no recipient)');
+            console.log('Subject:', emailDraft.subject);
+            console.log('Body:', emailDraft.body);
+            return { success: true, debug: true };
+        }
+
         const token = await getAuthToken();
         const mimeMessage = createMimeMessage(emailDraft.subject, emailDraft.body, predictedEmail);
         const draft = await createDraft(token, mimeMessage);
