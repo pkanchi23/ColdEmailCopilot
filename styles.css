@@ -227,3 +227,61 @@
         stroke-dashoffset: -124;
     }
 }
+
+/* Button Spinner */
+.cec-btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: middle;
+    animation: rotate 1s linear infinite;
+}
+
+.cec-btn-spinner circle {
+    stroke: currentColor;
+    stroke-dasharray: 31.4 31.4;
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+}
+
+/* OAuth Toast Notification */
+.cec-oauth-toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto;
+    font-size: 14px;
+    color: #111827;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.cec-oauth-toast .spinner {
+    width: 20px;
+    height: 20px;
+    color: #2563eb;
+}
+
+.cec-oauth-toast-text {
+    font-weight: 500;
+}

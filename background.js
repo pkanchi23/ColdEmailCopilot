@@ -639,6 +639,17 @@ async function getAuthToken() {
     }
 
     console.log('Fetching new Gmail token...');
+
+    // Show OAuth notification to user
+    try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'showOAuthNotification' }).catch(() => {});
+        }
+    } catch (e) {
+        console.log('Could not show OAuth notification:', e);
+    }
+
     return new Promise((resolve, reject) => {
         const manifest = chrome.runtime.getManifest();
         const clientId = manifest.oauth2.client_id;
@@ -654,6 +665,16 @@ async function getAuthToken() {
         chrome.identity.launchWebAuthFlow(
             { url: authUrl, interactive: true },
             async (responseUrl) => {
+                // Hide OAuth notification
+                try {
+                    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                    if (tabs[0]) {
+                        chrome.tabs.sendMessage(tabs[0].id, { action: 'hideOAuthNotification' }).catch(() => {});
+                    }
+                } catch (e) {
+                    console.log('Could not hide OAuth notification:', e);
+                }
+
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
                     return;

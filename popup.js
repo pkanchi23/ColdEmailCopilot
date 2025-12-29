@@ -6,9 +6,6 @@ document.getElementById('optionsBtn').addEventListener('click', () => {
     }
 });
 
-const setStatus = (msg) => {
-    document.getElementById('status').innerText = msg;
-};
 
 // --- Tab Logic ---
 const tabs = document.querySelectorAll('.tab');
@@ -133,24 +130,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Show Web Grounding checkbox if enabled in settings
-    const { webGrounding = false, model = 'gpt-5.2' } = await chrome.storage.local.get(['webGrounding', 'model']);
-    const webGroundingContainer = document.getElementById('webGroundingContainer');
-    const useWebGroundingCheckbox = document.getElementById('useWebGrounding');
-
-    if (webGrounding) {
-        webGroundingContainer.style.display = 'flex';
-
-        // Show warning popup on first check
-        useWebGroundingCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked && !model.startsWith('claude-')) {
-                if (!confirm('⚠️ Web Grounding only works with Claude/Anthropic models.\n\nYour current model is: ' + model + '\n\nPlease switch to a Claude model in Settings to use this feature.\n\nContinue anyway?')) {
-                    e.target.checked = false;
-                    return;
-                }
-            }
-        });
-    }
 });
 
 // Export functionality
@@ -298,44 +277,4 @@ document.getElementById('saveTemplateBtn')?.addEventListener('click', async () =
 
     alert('Template saved successfully!');
     loadTemplates();
-});
-
-
-document.getElementById('generateBtn').addEventListener('click', async () => {
-    setStatus('Analyzing profile...');
-
-    // Get active tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab) {
-        setStatus('Error: No active tab found.');
-        return;
-    }
-
-    if (!tab.url.includes('linkedin.com')) {
-        setStatus('Please navigate to a LinkedIn user profile first.');
-        return;
-    }
-
-    try {
-        const includeQuestions = document.getElementById('includeQuestions').checked;
-        const useWebGrounding = document.getElementById('useWebGrounding')?.checked || false;
-
-        // Send message to content script to scrape
-        const response = await chrome.tabs.sendMessage(tab.id, {
-            action: 'scrapeAndGenerate',
-            includeQuestions: includeQuestions,
-            useWebGrounding: useWebGrounding
-        });
-
-        if (response && response.started) {
-            setStatus('Drafting email in background...');
-            setTimeout(() => window.close(), 1500);
-        } else {
-            setStatus('Error: Could not trigger generation. Try refreshing the page.');
-        }
-    } catch (e) {
-        console.error(e);
-        setStatus('Error: Check if extension is enabled and reload page.');
-    }
 });

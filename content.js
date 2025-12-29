@@ -4,10 +4,11 @@
 
 const CONFIG = {
     CACHE_TTL: 5 * 60 * 1000, // 5 minutes
-    DEBOUNCE_DELAY: 500, // ms
+    DEBOUNCE_DELAY: 200, // ms - reduced for faster response
     MAX_EXPERIENCES: 5,
     MAX_EDUCATION: 2,
-    BUTTON_INJECT_RETRY: 3000 // ms
+    BUTTON_INJECT_RETRY: 500, // ms - reduced for faster retries
+    INITIAL_DELAY: 100 // ms - small delay for DOM to settle
 };
 
 // State
@@ -205,6 +206,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'scrapeAndGenerate') {
         runGeneration('', null, request.includeQuestions || false, request.useWebGrounding || false);
         sendResponse({ started: true });
+    } else if (request.action === 'showOAuthNotification') {
+        showOAuthToast();
+        sendResponse({ shown: true });
+    } else if (request.action === 'hideOAuthNotification') {
+        hideOAuthToast();
+        sendResponse({ hidden: true });
     }
 });
 
@@ -245,6 +252,34 @@ const showError = (type, message) => {
     }
 
     alert(errorMsg);
+};
+
+// OAuth Toast Notification
+let oauthToast = null;
+
+const showOAuthToast = () => {
+    // Remove existing toast if any
+    if (oauthToast) {
+        oauthToast.remove();
+    }
+
+    // Create toast
+    oauthToast = document.createElement('div');
+    oauthToast.className = 'cec-oauth-toast';
+    oauthToast.innerHTML = `
+        <svg class="spinner" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="31.4 31.4" stroke-linecap="round" style="animation: dash 1.5s ease-in-out infinite;"/>
+        </svg>
+        <span class="cec-oauth-toast-text">Please sign in to Gmail to continue...</span>
+    `;
+    document.body.appendChild(oauthToast);
+};
+
+const hideOAuthToast = () => {
+    if (oauthToast) {
+        oauthToast.remove();
+        oauthToast = null;
+    }
 };
 
 // Helper to scrape current user's name
@@ -497,7 +532,13 @@ const createButton = () => {
         if (result === null) return;
 
         setLoadingState(true);
-        emailBtn.innerText = 'Generating...';
+        // Add spinner to button
+        emailBtn.innerHTML = `
+            <svg class="cec-btn-spinner" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"/>
+            </svg>
+            Generating...
+        `;
         emailBtn.disabled = true;
         emailBtn.style.opacity = '0.7';
 
@@ -626,30 +667,44 @@ document.addEventListener('keydown', (e) => {
 // INITIALIZATION
 // ==========================
 
-// Run immediately
-injectButton();
-
-// Debounced observer
-const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
-
-const observer = new MutationObserver((mutations) => {
-    // Only react if we haven't injected yet
-    if (!state.buttonInjected) {
-        debouncedInject();
-    }
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
-
-// Fallback interval (will stop after first successful injection)
-state.intervalId = setInterval(() => {
-    if (!state.buttonInjected) {
+// Wait for DOM to be ready before first injection attempt
+const initializeButtonInjection = () => {
+    // Initial injection with small delay for DOM to settle
+    setTimeout(() => {
         injectButton();
-    } else {
-        clearInterval(state.intervalId);
-        state.intervalId = null;
-    }
-}, CONFIG.BUTTON_INJECT_RETRY);
+    }, CONFIG.INITIAL_DELAY);
+
+    // Debounced observer for DOM changes
+    const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
+
+    const observer = new MutationObserver((mutations) => {
+        // Only react if we haven't injected yet
+        if (!state.buttonInjected) {
+            debouncedInject();
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Fallback interval (will stop after first successful injection)
+    state.intervalId = setInterval(() => {
+        if (!state.buttonInjected) {
+            injectButton();
+        } else {
+            clearInterval(state.intervalId);
+            state.intervalId = null;
+        }
+    }, CONFIG.BUTTON_INJECT_RETRY);
+};
+
+// Start initialization based on document ready state
+if (document.readyState === 'loading') {
+    // DOM not ready yet, wait for DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', initializeButtonInjection);
+} else {
+    // DOM already loaded, initialize immediately
+    initializeButtonInjection();
+}
