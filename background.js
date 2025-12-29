@@ -107,19 +107,21 @@ Two things I'm curious about:
 
       STRUCTURE:
       1. Intro: Casual introduction with name, role, background (1 sentence). NEVER use "Name here -" format (e.g., "Pranav here -"). Just introduce naturally.
-      2. Connection: Specific details from profile, analytical link to your journey
-      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list with NO blank lines` : '3. Ask to connect briefly'}
-      4. Closing: Express openness, acknowledge busy schedule, thank sincerely
+      2. Connection: Find SPECIFIC points of intersection between YOUR journey and THEIRS. Make them think "this person really gets it."
+      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list with NO blank lines. Questions must be ones they are UNIQUELY positioned to answer.` : '3. Ask for a quick call'}
+      4. Closing: Ask for a quick call (NOT "15 mins", just "quick call"). Acknowledge busy schedule, thank sincerely. NEVER offer coffee.
 
-      SUBJECT: Formal/direct (e.g., "Incoming IB Analyst Seeking Advice", "Question from Fellow [School] Alum"). Never casual.
+      SUBJECT: State your PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about transitioning to growth equity"). NEVER just describe their career move (NOT "PWP to Duolingo Move"). Be formal/direct.
       TONE: Professional, respectful, intellectually curious. Show you did research.
 
       ${includeQuestions ? `QUESTIONS (2-3 only if highly relevant):
+      - These questions are CRITICAL - they make your email engaging and hard to ignore
+      - Ask questions they are UNIQUELY positioned to answer based on their specific path
       - Must show UNIQUE INSIGHT from their specific path + STRONG tie to your context
       - Ask about decisions/trade-offs, NOT "what is it like"
       - Focus on CAREER and WORK decisions - NEVER mention compensation, comp, salary, or money
       - Must be concise and specific to THEIR journey
-      - Skip if no highly pertinent question exists - just ask for chat
+      - Skip if no highly pertinent question exists - just ask for a quick call
       Examples: "When did shift from 'executing' to 'owning outcomes' happen?" / "How reversible did [specific choice] feel?" / "What made you prioritize [X] over [Y]?" / "What was overrated about [path stage]?"
       Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / Any mention of compensation/money` : ''}
       TIMING: Don't say "recently started/joined" unless <1yr ago. Skip if unclear.
@@ -130,6 +132,8 @@ Two things I'm curious about:
         // Build Question Mode instructions (for non-finance mode)
         const questionInstructions = includeQuestions ? `
       QUESTION MODE (1-3 questions):
+      - CRITICAL: Questions make your email engaging and hard to ignore
+      - Ask questions they are UNIQUELY positioned to answer based on their specific path
       - Only if they have UNIQUE INSIGHT + STRONG tie to your context
       - Ask about decisions/trade-offs, NOT "what is it like"
       - Focus on CAREER and WORK - NEVER mention compensation, comp, salary, or money
@@ -154,7 +158,7 @@ Two things I'm curious about:
 
       SENDER: ${userContext || 'Not provided'}
 
-      LOCATION CTA: Coffee/in-person if same city (check locations). Otherwise: call/Zoom. Never suggest coffee if locations differ/unclear.
+      CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
       ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
       ${exampleEmail ? `STYLE REF (match vibe): ${exampleEmail}` : ''}
@@ -169,7 +173,7 @@ Two things I'm curious about:
       ${questionInstructions}
 
       TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-      GOAL: ${financeRecruitingMode ? 'Career advice + potential call' : '15-min intro call'}
+      GOAL: Make this email SO ENGAGING it's hard to ignore. Find specific points of intersection. Ask questions they're uniquely positioned to answer. Make them think "this person really gets it."
 
       Write like a human (no jargon, natural not robotic).
 
@@ -177,17 +181,17 @@ Two things I'm curious about:
       1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
       2. Short punchy sentences. Conversational but professional (like respected colleague).
       3. NEVER use "Name here -" introduction format (e.g., "Pranav here -"). Just introduce naturally and casually.
-      4. Core insight: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales.
+      4. CRITICAL - Find SPECIFIC points of intersection: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
          Bad: "I saw you work at Stripe. Interested in fintech."
          Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
          Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
-      5. CTA: Specific (15-min call preferred, or coffee if same location), low-commitment, acknowledge busy. Follow location rules strictly (coffee ONLY if same location, otherwise phone call).
+      5. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
       6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
       7. NEVER mention compensation, comp, salary, or money in any context.
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-      SUBJECT: "[A] to [B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+      SUBJECT: State YOUR PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about growth equity transition"). NEVER just describe their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"/"[A] to [B] move"`}
 
       FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
       ALMA MATER: Never mention their school unless sender attended SAME one.
@@ -211,7 +215,7 @@ Two things I'm curious about:
             // Split prompt into cacheable (static instructions) and dynamic (profile data)
             const staticInstructions = `You're a real person (NOT marketer/salesperson) writing a genuine cold email.
 
-LOCATION CTA: Coffee/in-person if same city (check locations). Otherwise: call/Zoom. Never suggest coffee if locations differ/unclear.
+CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
 WARM CONNECTION: If we know each other (mentor/colleague/met before), reconnect naturally. Don't formally intro or explain relationship robotically.
 Bad: "I was your mentee..." Good: "Been a while since [event]! Hope you've been well."
@@ -223,7 +227,7 @@ ${financeInstructions}
 ${questionInstructions}
 
 TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-GOAL: ${financeRecruitingMode ? 'Career advice + potential call' : '15-min intro call'}
+GOAL: Make this email SO ENGAGING it's hard to ignore. Find specific points of intersection. Ask questions they're uniquely positioned to answer. Make them think "this person really gets it."
 
 Write like a human (no jargon, natural not robotic).
 
@@ -231,17 +235,17 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
 2. Short punchy sentences. Conversational but professional (like respected colleague).
 3. NEVER use "Name here -" introduction format (e.g., "Pranav here -"). Just introduce naturally and casually.
-4. Core insight: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales.
+4. CRITICAL - Find SPECIFIC points of intersection: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
    Bad: "I saw you work at Stripe. Interested in fintech."
    Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
    Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
-5. CTA: Specific (15-min call preferred, or coffee if same location), low-commitment, acknowledge busy. Follow location rules strictly (coffee ONLY if same location, otherwise phone call).
+5. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
 6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
 7. NEVER mention compensation, comp, salary, or money in any context.
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-SUBJECT: "[A] to [B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+SUBJECT: State YOUR PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about growth equity transition"). NEVER just describe their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"/"[A] to [B] move"`}
 
 FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Never mention their school unless sender attended SAME one.`;
