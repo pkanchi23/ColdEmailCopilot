@@ -174,9 +174,9 @@ Two things I'm curious about:
       - Ex: "Your move from [Company A] to [Company B] suggests you prioritized [X]. I'm building [X] at..."
 
       STRUCTURE:
-      1. Intro: Casual introduction with name, role, background (1 sentence). NEVER use "Name here -" format (e.g., "Pranav here -"). Just introduce naturally.
+      1. Intro: Casual introduction with name, role, background (1 sentence). CRITICAL: ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -", "John here -", etc.). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
       2. Connection: Find SPECIFIC points of intersection between YOUR journey and THEIRS. Make them think "this person really gets it."
-      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list with NO blank lines. Questions must be ones they are UNIQUELY positioned to answer.` : '3. Ask for a quick call'}
+      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list with NO blank lines. Questions must reference SPECIFIC details from their profile (companies, roles, transitions, timeframes).` : '3. Ask for a quick call'}
       4. Closing: Ask for a quick call (NOT "15 mins", just "quick call"). Acknowledge busy schedule, thank sincerely. NEVER offer coffee.
 
       SUBJECT: State your PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about transitioning to growth equity"). NEVER just describe their career move (NOT "PWP to Duolingo Move"). Be formal/direct.
@@ -184,15 +184,14 @@ Two things I'm curious about:
 
       ${includeQuestions ? `QUESTIONS (2-3 only if highly relevant):
       - These questions are CRITICAL - they make your email engaging and hard to ignore
-      - Ask questions they are UNIQUELY positioned to answer based on their specific path
-      - Must show UNIQUE INSIGHT from their specific path + STRONG tie to your context
-      - Ask about decisions/trade-offs, NOT "what is it like"
+      - MUST reference SPECIFIC details: actual company names, specific role transitions, specific timeframes from their experience
+      - FORBIDDEN: Generic questions that could apply to anyone. Questions MUST be rooted in their specific career arc
+      - Ask about decisions/trade-offs using their ACTUAL experiences, NOT "what is it like"
       - Focus on CAREER and WORK decisions - NEVER mention compensation, comp, salary, or money
-      - Must be concise and specific to THEIR journey
-      - Skip if no highly pertinent question exists - just ask for a quick call
-      Examples: "When did shift from 'executing' to 'owning outcomes' happen?" / "How reversible did [specific choice] feel?" / "What made you prioritize [X] over [Y]?" / "What was overrated about [path stage]?"
-      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / Any mention of compensation/money` : ''}
-      TIMING: Don't say "recently started/joined" unless <1yr ago. Skip if unclear.
+      - AVOID ASSUMPTIONS: Don't assume they're "ramping up" or "getting up to speed" unless they just started (<3 months). Check tenure carefully.
+      Good: "Your move from Goldman Sachs IB to Sequoia (after 2.5 years) - what made you confident enough to jump then vs staying for VP?" / "You went consumer tech (Duolingo) after 3 years in VC - what changed your thesis on operating vs investing?"
+      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / "How's the new role going?" / Any vague question / Any mention of compensation/money` : ''}
+      TIMING & PRECISION: Don't say "recently started/joined" unless <3 months ago. NEVER make assumptions about their current state (e.g., "swamped getting up to speed", "settling in", "ramping up") - you don't know this. Stick to facts from their profile.
       TONE: Always polite, respectful, and non-offensive. Never pushy or entitled.
       FORMAT: Paragraph breaks between sections${includeQuestions ? `, ${questionFormattingRules}` : ''}. Sign: "Best, ${firstName}"
         ` : '';
@@ -201,18 +200,23 @@ Two things I'm curious about:
         const questionInstructions = includeQuestions ? `
       QUESTION MODE (1-3 questions):
       - CRITICAL: Questions make your email engaging and hard to ignore
-      - Ask questions they are UNIQUELY positioned to answer based on their specific path
-      - Only if they have UNIQUE INSIGHT + STRONG tie to your context
-      - Ask about decisions/trade-offs, NOT "what is it like"
+      - MUST reference SPECIFIC details: actual company names, specific role transitions, specific timeframes from their experience
+      - FORBIDDEN: Generic questions that could apply to anyone. Questions MUST be rooted in their specific career arc
+      - Ask about decisions/trade-offs using their ACTUAL experiences, NOT "what is it like"
       - Focus on CAREER and WORK - NEVER mention compensation, comp, salary, or money
-      - Must sit at intersection of THEIR path + YOUR context
+      - AVOID ASSUMPTIONS: Don't assume their current state (e.g., "ramping up", "settling in") unless they just started (<3 months)
       - Be concise, specific to THEIR journey. Skip if no highly pertinent question.
       ${questionFormattingRules}
-      Examples: "How did you balance [trade-off]?" / "Biggest surprise in [transition]?" / "Your move from [A] to [B] suggests [X] - how did you decide?"
-      Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / Any mention of compensation` : '';
+      Good: "Your move from Stripe to 20-person startup (after 4 years) - how did you think about stability vs ownership?" / "You went from PM to founder - what convinced you the timing was right?"
+      Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / "How's the new gig?" / Any vague question / Any mention of compensation` : '';
 
         const prompt = `
       You're a real person (NOT marketer/salesperson) writing a genuine cold email.
+
+      CRITICAL RULES:
+      1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
+      2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
+      3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
 
       RECIPIENT:
       Name: ${profileData.name}
@@ -253,14 +257,15 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `CASUAL MODE:
       1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
       2. Short punchy sentences. Conversational but professional (like respected colleague).
-      3. NEVER use "Name here -" introduction format (e.g., "Pranav here -"). Just introduce naturally and casually.
-      4. CRITICAL - Find SPECIFIC points of intersection: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
+      3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
+      4. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
          Bad: "I saw you work at Stripe. Interested in fintech."
          Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
          Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
       5. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
       6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
       7. NEVER mention compensation, comp, salary, or money in any context.
+      8. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
@@ -288,6 +293,11 @@ Two things I'm curious about:
             // Split prompt into cacheable (static instructions) and dynamic (profile data)
             const staticInstructions = `You're a real person (NOT marketer/salesperson) writing a genuine cold email.
 
+CRITICAL RULES:
+1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
+2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
+3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
+
 CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
 WARM CONNECTION: If we know each other (mentor/colleague/met before), reconnect naturally. Don't formally intro or explain relationship robotically.
@@ -307,14 +317,15 @@ Write like a human (no jargon, natural not robotic).
 ${financeRecruitingMode ? '' : `CASUAL MODE:
 1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
 2. Short punchy sentences. Conversational but professional (like respected colleague).
-3. NEVER use "Name here -" introduction format (e.g., "Pranav here -"). Just introduce naturally and casually.
-4. CRITICAL - Find SPECIFIC points of intersection: What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
+3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
+4. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
    Bad: "I saw you work at Stripe. Interested in fintech."
    Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
    Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
 5. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
 6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
 7. NEVER mention compensation, comp, salary, or money in any context.
+8. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
