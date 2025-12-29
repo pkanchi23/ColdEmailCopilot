@@ -71,8 +71,10 @@ async function handleGenerateDraft(requestData) {
       - Show you've done your research
       
       ${includeQuestions ? `QUESTION GUIDELINES:
-      - Questions should be about LESSONS LEARNED and CAREER ADVICE, not job-specific or technical finance questions
-      - Focus on how their unique background and decisions relate to YOUR situation
+      - **CRITICAL RELEVANCE BAR**: Only include questions if the recipient has **UNIQUE INSIGHT** (e.g., they made a specific transition you are considering) AND it ties **STRONGLY** to your background.
+      - **NO BLACK BOX QUESTIONS**: Do not ask "what is it like" questions. Ask about *decisions* and *trade-offs*.
+      - **INTERSECTION IS KEY**: The question must sit at the intersection of THEIR unique path and YOUR specific context.
+      - If you cannot find a *highly pertinent* question based on the data, SKIP the questions and just ask for a chat.
       
       GOLD STANDARD QUESTION EXAMPLES (Use these as inspiration only - adapt to their specific background):
       ${(() => {
