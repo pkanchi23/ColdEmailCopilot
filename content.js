@@ -732,10 +732,17 @@ const showToast = (message, type = 'info', duration = 5000) => {
         max-width: 500px;
     `;
 
-    toast.innerHTML = `
-        <span style="font-size: 18px;">${icon}</span>
-        <span>${message}</span>
-    `;
+    // Create icon span (XSS safe)
+    const iconSpan = document.createElement('span');
+    iconSpan.style.fontSize = '18px';
+    iconSpan.textContent = icon;
+
+    // Create message span (XSS safe)
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+
+    toast.appendChild(iconSpan);
+    toast.appendChild(messageSpan);
 
     document.body.appendChild(toast);
 
@@ -783,15 +790,35 @@ const showOAuthToast = () => {
         clearTimeout(oauthToastTimeout);
     }
 
-    // Create toast
+    // Create toast (XSS safe)
     oauthToast = document.createElement('div');
     oauthToast.className = 'cec-oauth-toast';
-    oauthToast.innerHTML = `
-        <svg class="spinner" viewBox="0 0 50 50">
-            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="31.4 31.4" stroke-linecap="round" style="animation: dash 1.5s ease-in-out infinite;"/>
-        </svg>
-        <span class="cec-oauth-toast-text">Please sign in to Gmail to continue...</span>
-    `;
+
+    // Create SVG spinner
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'spinner');
+    svg.setAttribute('viewBox', '0 0 50 50');
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', '25');
+    circle.setAttribute('cy', '25');
+    circle.setAttribute('r', '20');
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', 'currentColor');
+    circle.setAttribute('stroke-width', '5');
+    circle.setAttribute('stroke-dasharray', '31.4 31.4');
+    circle.setAttribute('stroke-linecap', 'round');
+    circle.style.animation = 'dash 1.5s ease-in-out infinite';
+
+    svg.appendChild(circle);
+
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.className = 'cec-oauth-toast-text';
+    textSpan.textContent = 'Please sign in to Gmail to continue...';
+
+    oauthToast.appendChild(svg);
+    oauthToast.appendChild(textSpan);
     document.body.appendChild(oauthToast);
 
     // Auto-hide after 30 seconds as fallback
@@ -954,7 +981,13 @@ const createSaveModal = async () => {
     overlay.className = 'cec-modal-overlay cec-save-modal-overlay';
 
     const hasLists = profileLists.length > 0;
-    let listOptionsHTML = profileLists.map(list => `<option value="${list}">${list}</option>`).join('');
+
+    // Build modal structure safely (XSS safe - escaping user list names)
+    let listOptionsHTML = profileLists.map(list => {
+        const escapedValue = escapeHtml(list);
+        const escapedText = escapeHtml(list);
+        return `<option value="${escapedValue}">${escapedText}</option>`;
+    }).join('');
 
     overlay.innerHTML = `
         <div class="cec-modal cec-save-modal">
@@ -1084,13 +1117,25 @@ const createButton = () => {
             if (result === null) return;
 
             setLoadingState(true);
-            // Add spinner to button
-            emailBtn.innerHTML = `
-                <svg class="cec-btn-spinner" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"/>
-                </svg>
-                Generating...
-            `;
+            // Add spinner to button (XSS safe)
+            emailBtn.textContent = '';
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'cec-btn-spinner');
+            svg.setAttribute('viewBox', '0 0 50 50');
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '25');
+            circle.setAttribute('cy', '25');
+            circle.setAttribute('r', '20');
+            circle.setAttribute('fill', 'none');
+            circle.setAttribute('stroke', 'currentColor');
+            circle.setAttribute('stroke-width', '5');
+
+            svg.appendChild(circle);
+            emailBtn.appendChild(svg);
+            emailBtn.appendChild(document.createTextNode(' Generating...'));
+
             emailBtn.disabled = true;
             emailBtn.style.opacity = '0.7';
 
