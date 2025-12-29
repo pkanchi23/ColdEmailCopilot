@@ -1,3 +1,113 @@
+// ==========================
+// UTILITIES
+// ==========================
+
+// XSS protection: Escape HTML to prevent injection attacks
+const escapeHtml = (unsafe) => {
+    if (!unsafe) return '';
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+// Simple notification system for popup
+const showNotification = (message, type = 'info') => {
+    const existing = document.querySelector('.popup-notification');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = 'popup-notification';
+
+    let bgColor = '#2563eb';
+    if (type === 'error') bgColor = '#dc2626';
+    if (type === 'success') bgColor = '#16a34a';
+    if (type === 'warning') bgColor = '#ea580c';
+
+    notification.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${bgColor};
+        color: white;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        z-index: 10000;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        animation: slideDown 0.3s ease-out;
+        max-width: 220px;
+        text-align: center;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+};
+
+const showPrompt = (message, defaultValue = '') => {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 200px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        `;
+
+        modal.innerHTML = `
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: #374151;">${escapeHtml(message)}</p>
+            <input type="text" id="promptInput" value="${escapeHtml(defaultValue)}" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; margin-bottom: 12px; box-sizing: border-box;">
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button id="promptCancel" style="padding: 6px 12px; background: #f3f4f6; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Cancel</button>
+                <button id="promptOk" style="padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">OK</button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        const input = modal.querySelector('#promptInput');
+        input.focus();
+        input.select();
+
+        const cleanup = (value) => {
+            overlay.remove();
+            resolve(value);
+        };
+
+        modal.querySelector('#promptOk').addEventListener('click', () => cleanup(input.value));
+        modal.querySelector('#promptCancel').addEventListener('click', () => cleanup(null));
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') cleanup(input.value);
+            if (e.key === 'Escape') cleanup(null);
+        });
+    });
+};
+
 document.getElementById('optionsBtn').addEventListener('click', () => {
     if (chrome.runtime.openOptionsPage) {
         chrome.runtime.openOptionsPage();
@@ -43,7 +153,7 @@ const loadSavedProfiles = async () => {
         <div style="margin-bottom: 12px; padding-top: 4px;">
             <select id="listFilter" style="width: 100%; padding: 10px 8px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; line-height: 1.4; box-sizing: border-box;">
                 <option value="all">All Lists</option>
-                ${profileLists.map(list => `<option value="${list}" ${currentListFilter === list ? 'selected' : ''}>${list}</option>`).join('')}
+                ${profileLists.map(list => `<option value="${escapeHtml(list)}" ${currentListFilter === list ? 'selected' : ''}>${escapeHtml(list)}</option>`).join('')}
             </select>
         </div>
     `;
@@ -80,11 +190,13 @@ const loadSavedProfiles = async () => {
     if (filteredProfiles.length === 0) {
         emptyState.style.display = 'block';
         if (currentSearchQuery) {
-            emptyState.innerHTML = `No profiles match "${currentSearchQuery}"`;
+            emptyState.textContent = `No profiles match "${currentSearchQuery}"`;
         } else {
-            emptyState.innerHTML = currentListFilter === 'all'
-                ? 'No profiles saved yet.<br>Click "Save" on a LinkedIn profile.'
-                : `No profiles in "${currentListFilter}" list.`;
+            if (currentListFilter === 'all') {
+                emptyState.innerHTML = 'No profiles saved yet.<br>Click "Save" on a LinkedIn profile.';
+            } else {
+                emptyState.textContent = `No profiles in "${currentListFilter}" list.`;
+            }
         }
         return;
     }
@@ -96,9 +208,9 @@ const loadSavedProfiles = async () => {
         const div = document.createElement('div');
         div.className = 'saved-item';
         div.innerHTML = `
-            <div class="saved-name">${profile.name}</div>
-            <div class="saved-headline">${profile.headline}</div>
-            <div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px;">${profile.list || 'Everyone'}</div>
+            <div class="saved-name">${escapeHtml(profile.name)}</div>
+            <div class="saved-headline">${escapeHtml(profile.headline)}</div>
+            <div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px;">${escapeHtml(profile.list || 'Everyone')}</div>
             <div class="saved-actions">
                 <button class="visit-btn">Visit</button>
                 <button class="saved-delete">Remove</button>
@@ -165,29 +277,55 @@ document.getElementById('importFile')?.addEventListener('change', async (e) => {
         const text = await file.text();
         const importData = JSON.parse(text);
 
-        if (!importData.profiles || !Array.isArray(importData.profiles)) {
-            alert('Invalid import file format');
+        // Validate import data structure
+        if (!importData || typeof importData !== 'object') {
+            showNotification('Invalid import file format', 'error');
             return;
+        }
+
+        if (!importData.profiles || !Array.isArray(importData.profiles)) {
+            showNotification('Invalid import file: missing profiles array', 'error');
+            return;
+        }
+
+        // Validate each profile has required fields
+        const validProfiles = importData.profiles.filter(p => {
+            return p && typeof p === 'object' &&
+                   typeof p.url === 'string' &&
+                   typeof p.name === 'string' &&
+                   p.url.includes('linkedin.com');
+        });
+
+        if (validProfiles.length === 0) {
+            showNotification('No valid profiles found in import file', 'error');
+            return;
+        }
+
+        if (validProfiles.length < importData.profiles.length) {
+            showNotification(`Warning: ${importData.profiles.length - validProfiles.length} invalid profiles skipped`, 'warning');
         }
 
         const { savedProfiles = [], profileLists = [] } = await chrome.storage.local.get(['savedProfiles', 'profileLists']);
 
         // Merge profiles (avoid duplicates by URL)
         const existingUrls = new Set(savedProfiles.map(p => p.url));
-        const newProfiles = importData.profiles.filter(p => !existingUrls.has(p.url));
+        const newProfiles = validProfiles.filter(p => !existingUrls.has(p.url));
 
-        // Merge lists
-        const mergedLists = [...new Set([...profileLists, ...(importData.lists || [])])];
+        // Validate and merge lists
+        const importedLists = Array.isArray(importData.lists) ?
+            importData.lists.filter(l => typeof l === 'string' && l.trim().length > 0) : [];
+        const mergedLists = [...new Set([...profileLists, ...importedLists])];
 
         await chrome.storage.local.set({
             savedProfiles: [...savedProfiles, ...newProfiles],
             profileLists: mergedLists
         });
 
-        alert(`Imported ${newProfiles.length} new profiles`);
+        showNotification(`Imported ${newProfiles.length} new profiles`, 'success');
         loadSavedProfiles();
     } catch (error) {
-        alert('Error importing file: ' + error.message);
+        console.error('Import error:', error);
+        showNotification('Error importing file: ' + error.message, 'error');
     }
 
     // Reset file input
@@ -214,12 +352,12 @@ const loadTemplates = async () => {
         const div = document.createElement('div');
         div.className = 'saved-item';
         div.innerHTML = `
-            <div class="saved-name">${template.name}</div>
+            <div class="saved-name">${escapeHtml(template.name)}</div>
             <div class="saved-headline" style="font-size: 11px; margin-bottom: 4px;">
-                Subject: ${template.subject}
+                Subject: ${escapeHtml(template.subject)}
             </div>
             <div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px;">
-                ${template.category || 'General'} • Saved ${new Date(template.createdAt).toLocaleDateString()}
+                ${escapeHtml(template.category || 'General')} • Saved ${new Date(template.createdAt).toLocaleDateString()}
             </div>
             <div class="saved-actions">
                 <button class="use-template-btn" style="background: #2563eb; color: white;">Use Template</button>
@@ -230,11 +368,28 @@ const loadTemplates = async () => {
 
         div.querySelector('.use-template-btn').addEventListener('click', async () => {
             await chrome.storage.local.set({ activeTemplate: template });
-            alert(`Template "${template.name}" will be used for next generation`);
+            showNotification(`Template "${template.name}" will be used for next generation`, 'success');
         });
 
         div.querySelector('.view-template-btn').addEventListener('click', () => {
-            alert(`Subject: ${template.subject}\n\nBody:\n${template.body}`);
+            const viewOverlay = document.createElement('div');
+            viewOverlay.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 10000; padding: 20px;
+            `;
+            viewOverlay.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; max-height: 80vh; overflow-y: auto;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 14px;">Template Preview</h3>
+                    <p style="margin: 0 0 8px 0; font-size: 12px;"><strong>Subject:</strong> ${escapeHtml(template.subject)}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 12px;"><strong>Body:</strong></p>
+                    <pre style="white-space: pre-wrap; font-size: 11px; background: #f3f4f6; padding: 10px; border-radius: 4px; margin: 0;">${escapeHtml(template.body)}</pre>
+                    <button id="closeView" style="margin-top: 12px; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Close</button>
+                </div>
+            `;
+            document.body.appendChild(viewOverlay);
+            viewOverlay.querySelector('#closeView').addEventListener('click', () => viewOverlay.remove());
+            viewOverlay.addEventListener('click', (e) => { if (e.target === viewOverlay) viewOverlay.remove(); });
         });
 
         div.querySelector('.delete-template-btn').addEventListener('click', async () => {
@@ -253,14 +408,14 @@ document.getElementById('saveTemplateBtn')?.addEventListener('click', async () =
     const { lastGeneratedEmail } = await chrome.storage.local.get('lastGeneratedEmail');
 
     if (!lastGeneratedEmail) {
-        alert('No email has been generated yet. Generate an email first!');
+        showNotification('No email has been generated yet. Generate an email first!', 'warning');
         return;
     }
 
-    const name = prompt('Enter a name for this template:', 'My Template');
+    const name = await showPrompt('Enter a name for this template:', 'My Template');
     if (!name) return;
 
-    const category = prompt('Category (optional):', 'General') || 'General';
+    const category = await showPrompt('Category (optional):', 'General') || 'General';
 
     const template = {
         id: Date.now(),
@@ -275,6 +430,6 @@ document.getElementById('saveTemplateBtn')?.addEventListener('click', async () =
     emailTemplates.push(template);
     await chrome.storage.local.set({ emailTemplates });
 
-    alert('Template saved successfully!');
+    showNotification('Template saved successfully!', 'success');
     loadTemplates();
 });

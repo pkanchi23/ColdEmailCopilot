@@ -1,7 +1,3 @@
-// --- Token Caching ---
-let cachedToken = null;
-let tokenExpiry = null;
-
 // --- Web Grounding Helper ---
 async function performWebSearch(profileData, anthropicApiKey) {
     // Construct search query based on profile
@@ -500,27 +496,40 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                 "Wells Fargo": { domain: "wellsfargo.com", format: "first.last" }
             };
 
-            const currentCompany = profileData.experience.split('\n')[0].split(' at ')[1]; // Heuristic to get company
-            if (currentCompany) {
-                // Find matching company
-                const companyKey = Object.keys(FINANCE_DOMAINS).find(key =>
-                    currentCompany.toLowerCase().includes(key.toLowerCase()) ||
-                    key.toLowerCase().includes(currentCompany.toLowerCase())
-                );
+            try {
+                const experienceParts = profileData.experience.split('\n')[0].split(' at ');
+                if (experienceParts.length < 2) {
+                    console.log('Cannot parse company from experience');
+                } else {
+                    const currentCompany = experienceParts[1].split('(')[0].trim(); // Extract company and remove duration
 
-                if (companyKey) {
-                    const { domain, format } = FINANCE_DOMAINS[companyKey];
-                    const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.')); // Remove titles like "Mr." if simple split
-                    // Basic name parsing (first last)
-                    if (nameParts.length >= 2) {
-                        const first = nameParts[0].replace(/[^a-z]/g, '');
-                        const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
+                    if (currentCompany && currentCompany.length > 0) {
+                        // Find matching company
+                        const companyKey = Object.keys(FINANCE_DOMAINS).find(key =>
+                            currentCompany.toLowerCase().includes(key.toLowerCase()) ||
+                            key.toLowerCase().includes(currentCompany.toLowerCase())
+                        );
 
-                        if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}; xxxx`;
-                        else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}; xxxx`;
-                        else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}; xxxx`;
+                        if (companyKey) {
+                            const { domain, format } = FINANCE_DOMAINS[companyKey];
+                            const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.')); // Remove titles like "Mr." if simple split
+                            // Basic name parsing (first last)
+                            if (nameParts.length >= 2) {
+                                const first = nameParts[0].replace(/[^a-z]/g, '');
+                                const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
+
+                                // Validate that we have actual name parts
+                                if (first.length > 0 && last.length > 0) {
+                                    if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}; xxxx`;
+                                    else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}; xxxx`;
+                                    else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}; xxxx`;
+                                }
+                            }
+                        }
                     }
                 }
+            } catch (err) {
+                console.log('Email prediction failed:', err);
             }
         }
 
