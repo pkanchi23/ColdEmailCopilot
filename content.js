@@ -256,11 +256,17 @@ const showError = (type, message) => {
 
 // OAuth Toast Notification
 let oauthToast = null;
+let oauthToastTimeout = null;
 
 const showOAuthToast = () => {
     // Remove existing toast if any
     if (oauthToast) {
         oauthToast.remove();
+    }
+
+    // Clear any existing timeout
+    if (oauthToastTimeout) {
+        clearTimeout(oauthToastTimeout);
     }
 
     // Create toast
@@ -273,6 +279,11 @@ const showOAuthToast = () => {
         <span class="cec-oauth-toast-text">Please sign in to Gmail to continue...</span>
     `;
     document.body.appendChild(oauthToast);
+
+    // Auto-hide after 30 seconds as fallback
+    oauthToastTimeout = setTimeout(() => {
+        hideOAuthToast();
+    }, 30000);
 };
 
 const hideOAuthToast = () => {
@@ -280,7 +291,19 @@ const hideOAuthToast = () => {
         oauthToast.remove();
         oauthToast = null;
     }
+    if (oauthToastTimeout) {
+        clearTimeout(oauthToastTimeout);
+        oauthToastTimeout = null;
+    }
 };
+
+// Clean up any stale OAuth toasts on page load
+window.addEventListener('load', () => {
+    const staleToast = document.querySelector('.cec-oauth-toast');
+    if (staleToast) {
+        staleToast.remove();
+    }
+});
 
 // Helper to scrape current user's name
 const scrapeCurrentUser = () => {
