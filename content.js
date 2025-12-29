@@ -203,12 +203,12 @@ const scrapeProfile = () => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'scrapeAndGenerate') {
-        runGeneration();
+        runGeneration('', null, request.includeQuestions || false, request.useWebGrounding || false);
         sendResponse({ started: true });
     }
 });
 
-const runGeneration = async (instructions = '', senderName = null, includeQuestions = false) => {
+const runGeneration = async (instructions = '', senderName = null, includeQuestions = false, useWebGrounding = false) => {
     const profileData = scrapeProfile();
     console.log('ColdEmailCopilot: Scraped Data:', profileData);
 
@@ -219,7 +219,8 @@ const runGeneration = async (instructions = '', senderName = null, includeQuesti
                 profile: profileData,
                 instructions: instructions,
                 senderName: senderName,
-                includeQuestions: includeQuestions
+                includeQuestions: includeQuestions,
+                useWebGrounding: useWebGrounding
             }
         });
 

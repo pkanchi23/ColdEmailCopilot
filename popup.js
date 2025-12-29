@@ -124,12 +124,31 @@ const loadSavedProfiles = async () => {
 };
 
 // Search functionality
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('searchProfiles');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             currentSearchQuery = e.target.value;
             loadSavedProfiles();
+        });
+    }
+
+    // Show Web Grounding checkbox if enabled in settings
+    const { webGrounding = false, model = 'gpt-5.2' } = await chrome.storage.local.get(['webGrounding', 'model']);
+    const webGroundingContainer = document.getElementById('webGroundingContainer');
+    const useWebGroundingCheckbox = document.getElementById('useWebGrounding');
+
+    if (webGrounding) {
+        webGroundingContainer.style.display = 'flex';
+
+        // Show warning popup on first check
+        useWebGroundingCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked && !model.startsWith('claude-')) {
+                if (!confirm('⚠️ Web Grounding only works with Claude/Anthropic models.\n\nYour current model is: ' + model + '\n\nPlease switch to a Claude model in Settings to use this feature.\n\nContinue anyway?')) {
+                    e.target.checked = false;
+                    return;
+                }
+            }
         });
     }
 });
@@ -299,8 +318,15 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     }
 
     try {
+        const includeQuestions = document.getElementById('includeQuestions').checked;
+        const useWebGrounding = document.getElementById('useWebGrounding')?.checked || false;
+
         // Send message to content script to scrape
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'scrapeAndGenerate' });
+        const response = await chrome.tabs.sendMessage(tab.id, {
+            action: 'scrapeAndGenerate',
+            includeQuestions: includeQuestions,
+            useWebGrounding: useWebGrounding
+        });
 
         if (response && response.started) {
             setStatus('Drafting email in background...');
