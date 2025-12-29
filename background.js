@@ -190,13 +190,15 @@ Two things I'm curious about:
       - These questions are CRITICAL - they make your email engaging and hard to ignore
       - MUST reference SPECIFIC details: actual company names, specific role transitions, specific timeframes from their experience
       - FORBIDDEN: Generic questions that could apply to anyone. Questions MUST be rooted in their specific career arc
-      - DEPTH MATTERS: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
+      - CURIOSITY OVER ANALYSIS: Ask with genuine curiosity, not armchair analysis. Don't psychoanalyze their motivations or make assumptions about why they did things.
+      - NO GENERALIZATIONS: Never say "most people...", "typically X does Y", "people usually...". Don't position their choice against what "others" do.
+      - NO ASSUMPTION STATEMENTS: Don't tell them what they "valued" or what their move "suggests". Just ask the question directly.
       - Ask about decisions/trade-offs using their ACTUAL experiences, NOT "what is it like"
       - Focus on CAREER and WORK decisions - NEVER mention compensation, comp, salary, or money
       - AVOID ASSUMPTIONS: Don't assume they're "ramping up" or "getting up to speed" unless they just started (<3 months). Check tenure carefully.
       - SENIORITY: Don't ask basic questions of senior people (MDs/Partners/VPs) - they expect depth and analytical thinking.
-      Good: "Your move from Goldman Sachs IB to Sequoia (after 2.5 years) - what made you confident enough to jump then vs staying for VP?" / "You joined consumer VC right when the category was out of favor - what made you confident in the timing vs waiting for the cycle?"
-      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / "How's the new role going?" / Any vague question / Any mention of compensation/money` : ''}
+      Good: "What spurred the move to Sequoia at the 2.5 year mark vs staying for VP?" / "What made you confident in the timing for consumer VC?"
+      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / "How's the new role going?" / "Most people I know..." / "Your sequencing suggests..." / Any vague question / Any mention of compensation/money` : ''}
       TIMING & PRECISION: Don't say "recently started/joined" unless <3 months ago. NEVER make assumptions about their current state (e.g., "swamped getting up to speed", "settling in", "ramping up") - you don't know this. Stick to facts from their profile.
       TONE: Always polite, respectful, and non-offensive. Never pushy or entitled.
       FORMAT: Paragraph breaks between sections${includeQuestions ? `, ${questionFormattingRules}` : ''}. Sign: "Best, ${firstName}"
@@ -208,15 +210,17 @@ Two things I'm curious about:
       - CRITICAL: Questions make your email engaging and hard to ignore
       - MUST reference SPECIFIC details: actual company names, specific role transitions, specific timeframes from their experience
       - FORBIDDEN: Generic questions that could apply to anyone. Questions MUST be rooted in their specific career arc
-      - DEPTH MATTERS: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
+      - CURIOSITY OVER ANALYSIS: Ask with genuine curiosity, not armchair analysis. Don't psychoanalyze their motivations or make assumptions about why they did things.
+      - NO GENERALIZATIONS: Never say "most people...", "typically X does Y", "people usually...". Don't position their choice against what "others" do.
+      - NO ASSUMPTION STATEMENTS: Don't tell them what they "valued" or what their move "suggests". Just ask the question directly.
       - Ask about decisions/trade-offs using their ACTUAL experiences, NOT "what is it like"
       - Focus on CAREER and WORK - NEVER mention compensation, comp, salary, or money
       - AVOID ASSUMPTIONS: Don't assume their current state (e.g., "ramping up", "settling in") unless they just started (<3 months)
       - SENIORITY: Don't ask basic questions of senior people (MDs/Partners/VPs) - they expect depth and analytical thinking.
       - Be concise, specific to THEIR journey. Skip if no highly pertinent question.
       ${questionFormattingRules}
-      Good: "Your move from Stripe to 20-person startup (after 4 years) - how did you think about stability vs ownership?" / "You joined consumer VC right when the category was out of favor - what made you confident in the timing?"
-      Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / "How's the new gig?" / Any vague question / Any mention of compensation` : '';
+      Good: "What spurred the move to a 20-person startup at the 4 year mark?" / "What made you confident in the timing for consumer VC?"
+      Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / "How's the new gig?" / "Most people I know..." / "Your sequencing suggests..." / Any vague question / Any mention of compensation` : '';
 
         const prompt = `
       You're a real person (NOT marketer/salesperson) writing a genuine cold email.
@@ -225,17 +229,19 @@ Two things I'm curious about:
       1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
       2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
       3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
-      4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
+      4. BE CONCISE: Don't recite their career history back to them. Reference ONE specific detail max per question.
+         Bad: "Your move to Stanford GSB right after 3+ years at Mayura (plus the stealth build) caught my eye. Most finance-to-product people skip the MBA..."
+         Good: "You chose an MBA between finance and product roles - what drove that?"
       5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
       6. STRONG OPENING: First sentence must grab attention with a specific decision/transition, NOT generic observations.
          Bad: "I saw you work at Stripe and wanted to reach out"
          Good: "Your decision to leave MBB for a pre-PMF startup caught my eye"
       7. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "I've been following your work" or "impressed by your career". Just demonstrate it through specific references. No flattery.
          Bad: "I've been impressed by your career trajectory"
-         Good: "Your pivot from sell-side to growth equity after only 18 months suggests..."
-      8. QUESTION DEPTH: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
-         Bad: "What made you switch to VC?"
-         Good: "You joined Sequoia right when consumer was out of favor (2022) - what made you confident in the timing vs waiting for the cycle?"
+         Good: "Your pivot from banking to growth equity after 18 months caught my eye"
+      8. QUESTION LENGTH: Keep questions under 25 words. If longer, you're over-explaining. Cut the context, keep the question.
+         Bad: "Your sequencing suggests you valued the GSB network/framework before jumping into AI GTM execution - curious what drove that choice"
+         Good: "What spurred the move to Sequoia at the 2.5 year mark vs staying for VP?"
       9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
       10. FORBIDDEN WORDS: Do NOT use the terms "buyside", "sellside", "sell-side", or "buy-side". Use specific industry terms where applicable (e.g. "banking", "investing", "private equity", "advisory"), or just describe the roles naturally.
 
@@ -271,7 +277,7 @@ Two things I'm curious about:
       ${questionInstructions}
 
       TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-      GOAL: Make this email SO ENGAGING it's hard to ignore. Find specific points of intersection. Ask questions they're uniquely positioned to answer. Make them think "this person really gets it."
+      GOAL: Be concise and curious. Ask about ONE interesting choice from their path. Don't try to impress them with analysis - just ask a genuine question.
 
       Write like a human (no jargon, natural not robotic).
 
