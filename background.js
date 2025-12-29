@@ -240,6 +240,13 @@ Two things I'm curious about:
       ${profileData.education ? `Education: ${profileData.education}` : ''}
       About: ${profileData.about}
       Experience: ${profileData.experience}
+      ${profileData.skills ? `Skills: ${profileData.skills}` : ''}
+      ${profileData.languages ? `Languages: ${profileData.languages}` : ''}
+      ${profileData.certifications ? `Certifications: ${profileData.certifications}` : ''}
+      ${profileData.volunteer ? `Volunteer Experience: ${profileData.volunteer}` : ''}
+      ${profileData.awards ? `Honors & Awards: ${profileData.awards}` : ''}
+      ${profileData.projects ? `Projects: ${profileData.projects}` : ''}
+      ${profileData.publications ? `Publications: ${profileData.publications}` : ''}
 
       Analyze FULL career trajectory (patterns, transitions), not just current role.
 
@@ -359,6 +366,13 @@ ${profileData.location ? `Location: ${profileData.location}` : ''}
 ${profileData.education ? `Education: ${profileData.education}` : ''}
 About: ${profileData.about}
 Experience: ${profileData.experience}
+${profileData.skills ? `Skills: ${profileData.skills}` : ''}
+${profileData.languages ? `Languages: ${profileData.languages}` : ''}
+${profileData.certifications ? `Certifications: ${profileData.certifications}` : ''}
+${profileData.volunteer ? `Volunteer Experience: ${profileData.volunteer}` : ''}
+${profileData.awards ? `Honors & Awards: ${profileData.awards}` : ''}
+${profileData.projects ? `Projects: ${profileData.projects}` : ''}
+${profileData.publications ? `Publications: ${profileData.publications}` : ''}
 
 Analyze FULL career trajectory (patterns, transitions), not just current role.
 

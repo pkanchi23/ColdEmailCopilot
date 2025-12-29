@@ -7,6 +7,13 @@ const CONFIG = {
     DEBOUNCE_DELAY: 200, // ms - reduced for faster response
     MAX_EXPERIENCES: 5,
     MAX_EDUCATION: 2,
+    MAX_SKILLS: 10,
+    MAX_CERTIFICATIONS: 5,
+    MAX_LANGUAGES: 5,
+    MAX_VOLUNTEER: 3,
+    MAX_AWARDS: 5,
+    MAX_PROJECTS: 5,
+    MAX_PUBLICATIONS: 5,
     BUTTON_INJECT_RETRY: 500, // ms - reduced for faster retries
     INITIAL_DELAY: 100 // ms - small delay for DOM to settle
 };
@@ -178,13 +185,181 @@ const scrapeProfile = () => {
         });
     }
 
+    // Skills
+    const skillsSection = document.querySelector(LINKEDIN_SELECTORS.SKILLS.SECTION)?.parentElement;
+    const skills = [];
+
+    if (skillsSection) {
+        const skillItems = skillsSection.querySelectorAll(LINKEDIN_SELECTORS.SKILLS.ITEMS);
+
+        skillItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_SKILLS) return;
+
+            try {
+                const skillName = item.querySelector(LINKEDIN_SELECTORS.SKILLS.SKILL_NAME)?.innerText?.trim();
+                if (skillName) {
+                    skills.push(skillName);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing skill item:', e);
+            }
+        });
+    }
+
+    // Languages
+    const languagesSection = document.querySelector(LINKEDIN_SELECTORS.LANGUAGES.SECTION)?.parentElement;
+    const languages = [];
+
+    if (languagesSection) {
+        const languageItems = languagesSection.querySelectorAll(LINKEDIN_SELECTORS.LANGUAGES.ITEMS);
+
+        languageItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_LANGUAGES) return;
+
+            try {
+                const languageName = item.querySelector(LINKEDIN_SELECTORS.LANGUAGES.LANGUAGE_NAME)?.innerText?.trim();
+                const proficiency = item.querySelector(LINKEDIN_SELECTORS.LANGUAGES.PROFICIENCY)?.innerText?.trim();
+
+                if (languageName) {
+                    const langString = proficiency ? `${languageName} (${proficiency})` : languageName;
+                    languages.push(langString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing language item:', e);
+            }
+        });
+    }
+
+    // Certifications
+    const certificationsSection = document.querySelector(LINKEDIN_SELECTORS.CERTIFICATIONS.SECTION)?.parentElement;
+    const certifications = [];
+
+    if (certificationsSection) {
+        const certItems = certificationsSection.querySelectorAll(LINKEDIN_SELECTORS.CERTIFICATIONS.ITEMS);
+
+        certItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_CERTIFICATIONS) return;
+
+            try {
+                const certName = item.querySelector(LINKEDIN_SELECTORS.CERTIFICATIONS.CERT_NAME)?.innerText?.trim();
+                const issuer = item.querySelector(LINKEDIN_SELECTORS.CERTIFICATIONS.ISSUER)?.innerText?.trim();
+
+                if (certName) {
+                    const certString = issuer ? `${certName} from ${issuer}` : certName;
+                    certifications.push(certString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing certification item:', e);
+            }
+        });
+    }
+
+    // Volunteer Experience
+    const volunteerSection = document.querySelector(LINKEDIN_SELECTORS.VOLUNTEER.SECTION)?.parentElement;
+    const volunteer = [];
+
+    if (volunteerSection) {
+        const volunteerItems = volunteerSection.querySelectorAll(LINKEDIN_SELECTORS.VOLUNTEER.ITEMS);
+
+        volunteerItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_VOLUNTEER) return;
+
+            try {
+                const role = item.querySelector(LINKEDIN_SELECTORS.VOLUNTEER.ROLE)?.innerText?.trim();
+                const organization = item.querySelector(LINKEDIN_SELECTORS.VOLUNTEER.ORGANIZATION)?.innerText?.trim();
+
+                if (role && organization) {
+                    volunteer.push(`${role} at ${organization}`);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing volunteer item:', e);
+            }
+        });
+    }
+
+    // Awards & Honors
+    const awardsSection = document.querySelector(LINKEDIN_SELECTORS.AWARDS.SECTION)?.parentElement;
+    const awards = [];
+
+    if (awardsSection) {
+        const awardItems = awardsSection.querySelectorAll(LINKEDIN_SELECTORS.AWARDS.ITEMS);
+
+        awardItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_AWARDS) return;
+
+            try {
+                const awardName = item.querySelector(LINKEDIN_SELECTORS.AWARDS.AWARD_NAME)?.innerText?.trim();
+                const issuer = item.querySelector(LINKEDIN_SELECTORS.AWARDS.ISSUER)?.innerText?.trim();
+
+                if (awardName) {
+                    const awardString = issuer ? `${awardName} from ${issuer}` : awardName;
+                    awards.push(awardString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing award item:', e);
+            }
+        });
+    }
+
+    // Projects
+    const projectsSection = document.querySelector(LINKEDIN_SELECTORS.PROJECTS.SECTION)?.parentElement;
+    const projects = [];
+
+    if (projectsSection) {
+        const projectItems = projectsSection.querySelectorAll(LINKEDIN_SELECTORS.PROJECTS.ITEMS);
+
+        projectItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_PROJECTS) return;
+
+            try {
+                const projectName = item.querySelector(LINKEDIN_SELECTORS.PROJECTS.PROJECT_NAME)?.innerText?.trim();
+                if (projectName) {
+                    projects.push(projectName);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing project item:', e);
+            }
+        });
+    }
+
+    // Publications
+    const publicationsSection = document.querySelector(LINKEDIN_SELECTORS.PUBLICATIONS.SECTION)?.parentElement;
+    const publications = [];
+
+    if (publicationsSection) {
+        const publicationItems = publicationsSection.querySelectorAll(LINKEDIN_SELECTORS.PUBLICATIONS.ITEMS);
+
+        publicationItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_PUBLICATIONS) return;
+
+            try {
+                const title = item.querySelector(LINKEDIN_SELECTORS.PUBLICATIONS.TITLE)?.innerText?.trim();
+                const publisher = item.querySelector(LINKEDIN_SELECTORS.PUBLICATIONS.PUBLISHER)?.innerText?.trim();
+
+                if (title) {
+                    const pubString = publisher ? `${title} (${publisher})` : title;
+                    publications.push(pubString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing publication item:', e);
+            }
+        });
+    }
+
     const profileData = {
         name,
         headline,
         location,
         about,
         experience,
-        education: education.join('\n') || ''
+        education: education.join('\n') || '',
+        skills: skills.join(', ') || '',
+        languages: languages.join(', ') || '',
+        certifications: certifications.join('\n') || '',
+        volunteer: volunteer.join('\n') || '',
+        awards: awards.join('\n') || '',
+        projects: projects.join(', ') || '',
+        publications: publications.join('\n') || ''
     };
 
     // Validate
