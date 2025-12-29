@@ -1426,12 +1426,11 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // --- GMAIL API INTEGRATION ---
         if (debugMode) {
-            console.log('=== DEBUG MODE: Skipping Gmail ===');
-            console.log('Draft would have been created with:');
+            console.log('=== DEBUG MODE: Creating Gmail Draft ===');
             console.log('To:', predictedEmail || '(no recipient)');
             console.log('Subject:', emailDraft.subject);
             console.log('Body:', emailDraft.body);
-            return { success: true, debug: true };
+            console.log('=== Proceeding with draft creation ===');
         }
 
         const token = await getAuthToken();
