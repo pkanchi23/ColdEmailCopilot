@@ -17,7 +17,8 @@
   },
   "host_permissions": [
     "*://*.linkedin.com/*",
-    "*://api.openai.com/*"
+    "*://api.openai.com/*",
+    "*://api.anthropic.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -28,6 +29,7 @@
         "*://*.linkedin.com/*"
       ],
       "js": [
+        "linkedin-selectors.js",
         "content.js"
       ],
       "css": [
