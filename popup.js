@@ -324,7 +324,7 @@ document.getElementById('importFile')?.addEventListener('change', async (e) => {
         showNotification(`Imported ${newProfiles.length} new profiles`, 'success');
         loadSavedProfiles();
     } catch (error) {
-        console.error('Import error:', error);
+        Logger.error('Import error:', error);
         showNotification('Error importing file: ' + error.message, 'error');
     }
 
