@@ -5,8 +5,20 @@
 const CONFIG = {
     CACHE_TTL: 5 * 60 * 1000, // 5 minutes
     DEBOUNCE_DELAY: 200, // ms - reduced for faster response
-    MAX_EXPERIENCES: 5,
-    MAX_EDUCATION: 2,
+    MAX_EXPERIENCES: 20, // Increased from 5 to capture full career history
+    MAX_EDUCATION: 10, // Increased from 2 to capture all education
+    MAX_SKILLS: 50, // Increased from 10 to capture more skills
+    MAX_CERTIFICATIONS: 20, // Increased from 5
+    MAX_LANGUAGES: 10, // Increased from 5
+    MAX_VOLUNTEER: 10, // Increased from 3
+    MAX_AWARDS: 20, // Increased from 5
+    MAX_PROJECTS: 15, // Increased from 5
+    MAX_PUBLICATIONS: 20, // Increased from 5
+    MAX_COURSES: 15,
+    MAX_PATENTS: 10,
+    MAX_ORGANIZATIONS: 10,
+    MAX_RECOMMENDATIONS: 5,
+    MAX_FEATURED_ITEMS: 10,
     BUTTON_INJECT_RETRY: 500, // ms - reduced for faster retries
     INITIAL_DELAY: 100 // ms - small delay for DOM to settle
 };
@@ -178,13 +190,436 @@ const scrapeProfile = () => {
         });
     }
 
+    // Skills
+    const skillsSection = document.querySelector(LINKEDIN_SELECTORS.SKILLS.SECTION)?.parentElement;
+    const skills = [];
+
+    if (skillsSection) {
+        const skillItems = skillsSection.querySelectorAll(LINKEDIN_SELECTORS.SKILLS.ITEMS);
+
+        skillItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_SKILLS) return;
+
+            try {
+                const skillName = item.querySelector(LINKEDIN_SELECTORS.SKILLS.SKILL_NAME)?.innerText?.trim();
+                if (skillName) {
+                    skills.push(skillName);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing skill item:', e);
+            }
+        });
+    }
+
+    // Languages
+    const languagesSection = document.querySelector(LINKEDIN_SELECTORS.LANGUAGES.SECTION)?.parentElement;
+    const languages = [];
+
+    if (languagesSection) {
+        const languageItems = languagesSection.querySelectorAll(LINKEDIN_SELECTORS.LANGUAGES.ITEMS);
+
+        languageItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_LANGUAGES) return;
+
+            try {
+                const languageName = item.querySelector(LINKEDIN_SELECTORS.LANGUAGES.LANGUAGE_NAME)?.innerText?.trim();
+                const proficiency = item.querySelector(LINKEDIN_SELECTORS.LANGUAGES.PROFICIENCY)?.innerText?.trim();
+
+                if (languageName) {
+                    const langString = proficiency ? `${languageName} (${proficiency})` : languageName;
+                    languages.push(langString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing language item:', e);
+            }
+        });
+    }
+
+    // Certifications
+    const certificationsSection = document.querySelector(LINKEDIN_SELECTORS.CERTIFICATIONS.SECTION)?.parentElement;
+    const certifications = [];
+
+    if (certificationsSection) {
+        const certItems = certificationsSection.querySelectorAll(LINKEDIN_SELECTORS.CERTIFICATIONS.ITEMS);
+
+        certItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_CERTIFICATIONS) return;
+
+            try {
+                const certName = item.querySelector(LINKEDIN_SELECTORS.CERTIFICATIONS.CERT_NAME)?.innerText?.trim();
+                const issuer = item.querySelector(LINKEDIN_SELECTORS.CERTIFICATIONS.ISSUER)?.innerText?.trim();
+
+                if (certName) {
+                    const certString = issuer ? `${certName} from ${issuer}` : certName;
+                    certifications.push(certString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing certification item:', e);
+            }
+        });
+    }
+
+    // Volunteer Experience
+    const volunteerSection = document.querySelector(LINKEDIN_SELECTORS.VOLUNTEER.SECTION)?.parentElement;
+    const volunteer = [];
+
+    if (volunteerSection) {
+        const volunteerItems = volunteerSection.querySelectorAll(LINKEDIN_SELECTORS.VOLUNTEER.ITEMS);
+
+        volunteerItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_VOLUNTEER) return;
+
+            try {
+                const role = item.querySelector(LINKEDIN_SELECTORS.VOLUNTEER.ROLE)?.innerText?.trim();
+                const organization = item.querySelector(LINKEDIN_SELECTORS.VOLUNTEER.ORGANIZATION)?.innerText?.trim();
+
+                if (role && organization) {
+                    volunteer.push(`${role} at ${organization}`);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing volunteer item:', e);
+            }
+        });
+    }
+
+    // Awards & Honors
+    const awardsSection = document.querySelector(LINKEDIN_SELECTORS.AWARDS.SECTION)?.parentElement;
+    const awards = [];
+
+    if (awardsSection) {
+        const awardItems = awardsSection.querySelectorAll(LINKEDIN_SELECTORS.AWARDS.ITEMS);
+
+        awardItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_AWARDS) return;
+
+            try {
+                const awardName = item.querySelector(LINKEDIN_SELECTORS.AWARDS.AWARD_NAME)?.innerText?.trim();
+                const issuer = item.querySelector(LINKEDIN_SELECTORS.AWARDS.ISSUER)?.innerText?.trim();
+
+                if (awardName) {
+                    const awardString = issuer ? `${awardName} from ${issuer}` : awardName;
+                    awards.push(awardString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing award item:', e);
+            }
+        });
+    }
+
+    // Projects
+    const projectsSection = document.querySelector(LINKEDIN_SELECTORS.PROJECTS.SECTION)?.parentElement;
+    const projects = [];
+
+    if (projectsSection) {
+        const projectItems = projectsSection.querySelectorAll(LINKEDIN_SELECTORS.PROJECTS.ITEMS);
+
+        projectItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_PROJECTS) return;
+
+            try {
+                const projectName = item.querySelector(LINKEDIN_SELECTORS.PROJECTS.PROJECT_NAME)?.innerText?.trim();
+                if (projectName) {
+                    projects.push(projectName);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing project item:', e);
+            }
+        });
+    }
+
+    // Publications
+    const publicationsSection = document.querySelector(LINKEDIN_SELECTORS.PUBLICATIONS.SECTION)?.parentElement;
+    const publications = [];
+
+    if (publicationsSection) {
+        const publicationItems = publicationsSection.querySelectorAll(LINKEDIN_SELECTORS.PUBLICATIONS.ITEMS);
+
+        publicationItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_PUBLICATIONS) return;
+
+            try {
+                const title = item.querySelector(LINKEDIN_SELECTORS.PUBLICATIONS.TITLE)?.innerText?.trim();
+                const publisher = item.querySelector(LINKEDIN_SELECTORS.PUBLICATIONS.PUBLISHER)?.innerText?.trim();
+
+                if (title) {
+                    const pubString = publisher ? `${title} (${publisher})` : title;
+                    publications.push(pubString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing publication item:', e);
+            }
+        });
+    }
+
+    // Courses
+    const coursesSection = document.querySelector(LINKEDIN_SELECTORS.COURSES.SECTION)?.parentElement;
+    const courses = [];
+
+    if (coursesSection) {
+        const courseItems = coursesSection.querySelectorAll(LINKEDIN_SELECTORS.COURSES.ITEMS);
+
+        courseItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_COURSES) return;
+
+            try {
+                const courseName = item.querySelector(LINKEDIN_SELECTORS.COURSES.COURSE_NAME)?.innerText?.trim();
+                if (courseName) {
+                    courses.push(courseName);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing course item:', e);
+            }
+        });
+    }
+
+    // Test Scores
+    const testScoresSection = document.querySelector(LINKEDIN_SELECTORS.TEST_SCORES.SECTION)?.parentElement;
+    const testScores = [];
+
+    if (testScoresSection) {
+        const testItems = testScoresSection.querySelectorAll(LINKEDIN_SELECTORS.TEST_SCORES.ITEMS);
+
+        testItems.forEach((item, index) => {
+            try {
+                const testName = item.querySelector(LINKEDIN_SELECTORS.TEST_SCORES.TEST_NAME)?.innerText?.trim();
+                const score = item.querySelector(LINKEDIN_SELECTORS.TEST_SCORES.SCORE)?.innerText?.trim();
+
+                if (testName) {
+                    const testString = score ? `${testName}: ${score}` : testName;
+                    testScores.push(testString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing test score item:', e);
+            }
+        });
+    }
+
+    // Patents
+    const patentsSection = document.querySelector(LINKEDIN_SELECTORS.PATENTS.SECTION)?.parentElement;
+    const patents = [];
+
+    if (patentsSection) {
+        const patentItems = patentsSection.querySelectorAll(LINKEDIN_SELECTORS.PATENTS.ITEMS);
+
+        patentItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_PATENTS) return;
+
+            try {
+                const patentName = item.querySelector(LINKEDIN_SELECTORS.PATENTS.PATENT_NAME)?.innerText?.trim();
+                const details = item.querySelector(LINKEDIN_SELECTORS.PATENTS.DETAILS)?.innerText?.trim();
+
+                if (patentName) {
+                    const patentString = details ? `${patentName} (${details})` : patentName;
+                    patents.push(patentString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing patent item:', e);
+            }
+        });
+    }
+
+    // Organizations
+    const organizationsSection = document.querySelector(LINKEDIN_SELECTORS.ORGANIZATIONS.SECTION)?.parentElement;
+    const organizations = [];
+
+    if (organizationsSection) {
+        const orgItems = organizationsSection.querySelectorAll(LINKEDIN_SELECTORS.ORGANIZATIONS.ITEMS);
+
+        orgItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_ORGANIZATIONS) return;
+
+            try {
+                const orgName = item.querySelector(LINKEDIN_SELECTORS.ORGANIZATIONS.ORG_NAME)?.innerText?.trim();
+                const position = item.querySelector(LINKEDIN_SELECTORS.ORGANIZATIONS.POSITION)?.innerText?.trim();
+
+                if (orgName) {
+                    const orgString = position ? `${position} at ${orgName}` : orgName;
+                    organizations.push(orgString);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing organization item:', e);
+            }
+        });
+    }
+
+    // Recommendations
+    const recommendationsSection = document.querySelector(LINKEDIN_SELECTORS.RECOMMENDATIONS.SECTION)?.parentElement;
+    const recommendations = [];
+
+    if (recommendationsSection) {
+        const recItems = recommendationsSection.querySelectorAll(LINKEDIN_SELECTORS.RECOMMENDATIONS.ITEMS);
+
+        recItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_RECOMMENDATIONS) return;
+
+            try {
+                const recommender = item.querySelector(LINKEDIN_SELECTORS.RECOMMENDATIONS.RECOMMENDER)?.innerText?.trim();
+                const text = item.querySelector(LINKEDIN_SELECTORS.RECOMMENDATIONS.TEXT)?.innerText?.trim();
+
+                if (recommender && text) {
+                    recommendations.push(`${recommender}: "${text.substring(0, 150)}${text.length > 150 ? '...' : ''}"`);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing recommendation item:', e);
+            }
+        });
+    }
+
+    // Featured Content
+    const featuredSection = document.querySelector(LINKEDIN_SELECTORS.FEATURED.SECTION)?.parentElement;
+    const featured = [];
+
+    if (featuredSection) {
+        const featuredItems = featuredSection.querySelectorAll(LINKEDIN_SELECTORS.FEATURED.ITEMS);
+
+        featuredItems.forEach((item, index) => {
+            if (index >= CONFIG.MAX_FEATURED_ITEMS) return;
+
+            try {
+                const title = item.querySelector(LINKEDIN_SELECTORS.FEATURED.TITLE)?.innerText?.trim();
+                if (title) {
+                    featured.push(title);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing featured item:', e);
+            }
+        });
+    }
+
+    // Interests
+    const interestsSection = document.querySelector(LINKEDIN_SELECTORS.INTERESTS.SECTION)?.parentElement;
+    const interests = [];
+
+    if (interestsSection) {
+        const interestItems = interestsSection.querySelectorAll(LINKEDIN_SELECTORS.INTERESTS.ITEMS);
+
+        interestItems.forEach((item) => {
+            try {
+                const interestName = item.querySelector(LINKEDIN_SELECTORS.INTERESTS.INTEREST_NAME)?.innerText?.trim();
+                if (interestName) {
+                    interests.push(interestName);
+                }
+            } catch (e) {
+                console.log('ColdEmailCopilot: Error parsing interest item:', e);
+            }
+        });
+    }
+
+    // Profile Header Info (connections, followers)
+    let connectionsCount = '';
+    let followersCount = '';
+
+    try {
+        const connectionsEl = document.querySelector(LINKEDIN_SELECTORS.PROFILE_HEADER.CONNECTIONS);
+        if (connectionsEl) {
+            const text = connectionsEl.innerText?.trim();
+            if (text && text.includes('connection')) {
+                connectionsCount = text;
+            }
+        }
+
+        const followersEls = document.querySelectorAll(LINKEDIN_SELECTORS.PROFILE_HEADER.FOLLOWERS);
+        followersEls.forEach(el => {
+            const text = el.innerText?.trim();
+            if (text && text.includes('follower')) {
+                followersCount = text;
+            }
+        });
+    } catch (e) {
+        console.log('ColdEmailCopilot: Error parsing profile header stats:', e);
+    }
+
+    // Contact Information (visible if expanded)
+    let contactEmail = '';
+    let contactPhone = '';
+    let contactWebsite = '';
+    let contactTwitter = '';
+    let contactBirthday = '';
+
+    try {
+        const emailEl = document.querySelector(LINKEDIN_SELECTORS.CONTACT_INFO.EMAIL);
+        if (emailEl) {
+            contactEmail = emailEl.href?.replace('mailto:', '') || '';
+        }
+
+        const phoneEl = document.querySelector(LINKEDIN_SELECTORS.CONTACT_INFO.PHONE);
+        if (phoneEl) {
+            contactPhone = phoneEl.innerText?.trim() || '';
+        }
+
+        const websiteEl = document.querySelector(LINKEDIN_SELECTORS.CONTACT_INFO.WEBSITE);
+        if (websiteEl) {
+            contactWebsite = websiteEl.href || '';
+        }
+
+        const twitterEl = document.querySelector(LINKEDIN_SELECTORS.CONTACT_INFO.TWITTER);
+        if (twitterEl) {
+            contactTwitter = twitterEl.href || '';
+        }
+
+        const birthdayEl = document.querySelector(LINKEDIN_SELECTORS.CONTACT_INFO.BIRTHDAY);
+        if (birthdayEl) {
+            contactBirthday = birthdayEl.innerText?.trim() || '';
+        }
+    } catch (e) {
+        console.log('ColdEmailCopilot: Error parsing contact info:', e);
+    }
+
+    // Recent Activity/Posts
+    const activityPosts = [];
+
+    try {
+        const activitySection = document.querySelector(LINKEDIN_SELECTORS.ACTIVITY.SECTION);
+        if (activitySection) {
+            const posts = activitySection.querySelectorAll(LINKEDIN_SELECTORS.ACTIVITY.POSTS);
+            posts.forEach((post, index) => {
+                if (index >= 3) return; // Limit to 3 most recent
+
+                try {
+                    const postText = post.querySelector(LINKEDIN_SELECTORS.ACTIVITY.POST_TEXT)?.innerText?.trim();
+                    if (postText) {
+                        // Truncate long posts
+                        const truncated = postText.substring(0, 200);
+                        activityPosts.push(truncated + (postText.length > 200 ? '...' : ''));
+                    }
+                } catch (e) {
+                    console.log('ColdEmailCopilot: Error parsing activity post:', e);
+                }
+            });
+        }
+    } catch (e) {
+        console.log('ColdEmailCopilot: Error parsing activity section:', e);
+    }
+
     const profileData = {
         name,
         headline,
         location,
         about,
         experience,
-        education: education.join('\n') || ''
+        education: education.join('\n') || '',
+        skills: skills.join(', ') || '',
+        languages: languages.join(', ') || '',
+        certifications: certifications.join('\n') || '',
+        volunteer: volunteer.join('\n') || '',
+        awards: awards.join('\n') || '',
+        projects: projects.join(', ') || '',
+        publications: publications.join('\n') || '',
+        courses: courses.join(', ') || '',
+        testScores: testScores.join(', ') || '',
+        patents: patents.join('\n') || '',
+        organizations: organizations.join('\n') || '',
+        recommendations: recommendations.join('\n') || '',
+        featured: featured.join(', ') || '',
+        interests: interests.join(', ') || '',
+        connectionsCount: connectionsCount,
+        followersCount: followersCount,
+        contactEmail: contactEmail,
+        contactPhone: contactPhone,
+        contactWebsite: contactWebsite,
+        contactTwitter: contactTwitter,
+        contactBirthday: contactBirthday,
+        recentActivity: activityPosts.join('\n---\n') || ''
     };
 
     // Validate

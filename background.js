@@ -237,11 +237,33 @@ Two things I'm curious about:
       Name: ${profileData.name}
       Headline: ${profileData.headline}
       ${profileData.location ? `Location: ${profileData.location}` : ''}
-      ${profileData.education ? `Education: ${profileData.education}` : ''}
+      ${profileData.connectionsCount ? `Connections: ${profileData.connectionsCount}` : ''}
+      ${profileData.followersCount ? `Followers: ${profileData.followersCount}` : ''}
+
       About: ${profileData.about}
+
       Experience: ${profileData.experience}
 
-      Analyze FULL career trajectory (patterns, transitions), not just current role.
+      ${profileData.education ? `Education: ${profileData.education}` : ''}
+      ${profileData.skills ? `Skills: ${profileData.skills}` : ''}
+      ${profileData.languages ? `Languages: ${profileData.languages}` : ''}
+      ${profileData.certifications ? `Certifications:\n${profileData.certifications}` : ''}
+      ${profileData.courses ? `Courses: ${profileData.courses}` : ''}
+      ${profileData.testScores ? `Test Scores: ${profileData.testScores}` : ''}
+      ${profileData.volunteer ? `Volunteer Experience:\n${profileData.volunteer}` : ''}
+      ${profileData.awards ? `Honors & Awards:\n${profileData.awards}` : ''}
+      ${profileData.projects ? `Projects: ${profileData.projects}` : ''}
+      ${profileData.publications ? `Publications:\n${profileData.publications}` : ''}
+      ${profileData.patents ? `Patents:\n${profileData.patents}` : ''}
+      ${profileData.organizations ? `Organizations:\n${profileData.organizations}` : ''}
+      ${profileData.interests ? `Interests: ${profileData.interests}` : ''}
+      ${profileData.featured ? `Featured Content: ${profileData.featured}` : ''}
+      ${profileData.recommendations ? `Recommendations:\n${profileData.recommendations}` : ''}
+      ${profileData.recentActivity ? `Recent Activity:\n${profileData.recentActivity}` : ''}
+      ${profileData.contactWebsite ? `Website: ${profileData.contactWebsite}` : ''}
+      ${profileData.contactTwitter ? `Twitter: ${profileData.contactTwitter}` : ''}
+
+      Analyze FULL career trajectory (patterns, transitions), not just current role. Use ALL available information to find unique connection points.
 
       SENDER: ${userContext || 'Not provided'}
 
@@ -356,11 +378,33 @@ ALMA MATER: Only mention school if sender attended SAME one.`;
 Name: ${profileData.name}
 Headline: ${profileData.headline}
 ${profileData.location ? `Location: ${profileData.location}` : ''}
-${profileData.education ? `Education: ${profileData.education}` : ''}
+${profileData.connectionsCount ? `Connections: ${profileData.connectionsCount}` : ''}
+${profileData.followersCount ? `Followers: ${profileData.followersCount}` : ''}
+
 About: ${profileData.about}
+
 Experience: ${profileData.experience}
 
-Analyze FULL career trajectory (patterns, transitions), not just current role.
+${profileData.education ? `Education: ${profileData.education}` : ''}
+${profileData.skills ? `Skills: ${profileData.skills}` : ''}
+${profileData.languages ? `Languages: ${profileData.languages}` : ''}
+${profileData.certifications ? `Certifications:\n${profileData.certifications}` : ''}
+${profileData.courses ? `Courses: ${profileData.courses}` : ''}
+${profileData.testScores ? `Test Scores: ${profileData.testScores}` : ''}
+${profileData.volunteer ? `Volunteer Experience:\n${profileData.volunteer}` : ''}
+${profileData.awards ? `Honors & Awards:\n${profileData.awards}` : ''}
+${profileData.projects ? `Projects: ${profileData.projects}` : ''}
+${profileData.publications ? `Publications:\n${profileData.publications}` : ''}
+${profileData.patents ? `Patents:\n${profileData.patents}` : ''}
+${profileData.organizations ? `Organizations:\n${profileData.organizations}` : ''}
+${profileData.interests ? `Interests: ${profileData.interests}` : ''}
+${profileData.featured ? `Featured Content: ${profileData.featured}` : ''}
+${profileData.recommendations ? `Recommendations:\n${profileData.recommendations}` : ''}
+${profileData.recentActivity ? `Recent Activity:\n${profileData.recentActivity}` : ''}
+${profileData.contactWebsite ? `Website: ${profileData.contactWebsite}` : ''}
+${profileData.contactTwitter ? `Twitter: ${profileData.contactTwitter}` : ''}
+
+Analyze FULL career trajectory (patterns, transitions), not just current role. Use ALL available information to find unique connection points.
 
 SENDER: ${userContext || 'Not provided'}
 
@@ -1426,12 +1470,11 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // --- GMAIL API INTEGRATION ---
         if (debugMode) {
-            console.log('=== DEBUG MODE: Skipping Gmail ===');
-            console.log('Draft would have been created with:');
+            console.log('=== DEBUG MODE: Creating Gmail Draft ===');
             console.log('To:', predictedEmail || '(no recipient)');
             console.log('Subject:', emailDraft.subject);
             console.log('Body:', emailDraft.body);
-            return { success: true, debug: true };
+            console.log('=== Proceeding with draft creation ===');
         }
 
         const token = await getAuthToken();
