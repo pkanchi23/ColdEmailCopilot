@@ -236,6 +236,7 @@ Two things I'm curious about:
          Bad: "What made you switch to VC?"
          Good: "You joined Sequoia right when consumer was out of favor (2022) - what made you confident in the timing vs waiting for the cycle?"
       9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
+      10. FORBIDDEN WORDS: Do NOT use the terms "buyside", "sellside", "sell-side", or "buy-side". Use specific industry terms where applicable (e.g. "banking", "investing", "private equity", "advisory"), or just describe the roles naturally.
 
       RECIPIENT:
       Name: ${profileData.name}
