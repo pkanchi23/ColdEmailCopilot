@@ -4,7 +4,7 @@
 
 const CONFIG = {
     CACHE_TTL: 5 * 60 * 1000, // 5 minutes
-    DEBOUNCE_DELAY: 200, // ms - reduced for faster response
+    DEBOUNCE_DELAY: 500, // ms - increased to reduce excessive DOM checks
     MAX_EXPERIENCES: 20, // Increased from 5 to capture full career history
     MAX_EDUCATION: 10, // Increased from 2 to capture all education
     MAX_SKILLS: 50, // Increased from 10 to capture more skills
@@ -19,8 +19,9 @@ const CONFIG = {
     MAX_ORGANIZATIONS: 10,
     MAX_RECOMMENDATIONS: 5,
     MAX_FEATURED_ITEMS: 10,
-    BUTTON_INJECT_RETRY: 500, // ms - reduced for faster retries
-    INITIAL_DELAY: 100 // ms - small delay for DOM to settle
+    BUTTON_INJECT_RETRY: 2000, // ms - increased to reduce detection triggers
+    INITIAL_DELAY: 300, // ms - increased for better DOM stability
+    MAX_INJECT_ATTEMPTS: 20 // Stop polling after successful injection
 };
 
 // State
@@ -30,7 +31,9 @@ const state = {
     lastInjectedUrl: null,
     debounceTimer: null,
     intervalId: null,
-    observer: null
+    observer: null,
+    injectAttempts: 0,
+    stableInjection: false // Tracks if button has been stable for a while
 };
 
 // ==========================
@@ -1164,12 +1167,38 @@ const injectButton = () => {
             existingContainer.remove();
         }
         state.buttonInjected = false;
+        state.stableInjection = false;
+        state.injectAttempts = 0;
         console.log('ColdEmailCopilot: URL changed, resetting button injection state');
     }
     state.lastInjectedUrl = currentUrl;
 
+    // Don't inject if already stable
+    if (state.stableInjection) return;
+
     // Don't inject if already injected for this URL
-    if (state.buttonInjected) return;
+    if (state.buttonInjected) {
+        // Verify button still exists
+        const exists = document.querySelector('.cold-email-copilot-container');
+        if (exists) {
+            // Mark as stable after button has existed for a few checks
+            state.injectAttempts++;
+            if (state.injectAttempts >= CONFIG.MAX_INJECT_ATTEMPTS) {
+                state.stableInjection = true;
+                console.log('ColdEmailCopilot: Button injection stable, stopping polls');
+                // Stop interval to reduce detection
+                if (state.intervalId) {
+                    clearInterval(state.intervalId);
+                    state.intervalId = null;
+                }
+            }
+            return;
+        } else {
+            // Button was removed, reset
+            state.buttonInjected = false;
+            state.injectAttempts = 0;
+        }
+    }
 
     // Try to find action bar
     let actionPanel = null;
@@ -1196,6 +1225,7 @@ const injectButton = () => {
         actionPanel.appendChild(btnContainer);
         console.log('ColdEmailCopilot: Buttons injected successfully');
         state.buttonInjected = true;
+        state.injectAttempts = 0;
     }
 };
 
@@ -1259,8 +1289,8 @@ history.replaceState = function(...args) {
     detectUrlChange();
 };
 
-// Method 3: Poll for URL changes as fallback
-setInterval(detectUrlChange, 1000);
+// Method 3: Poll for URL changes as fallback (less frequent)
+setInterval(detectUrlChange, 2000);
 
 // Wait for DOM to be ready before first injection attempt
 const initializeButtonInjection = () => {
@@ -1273,8 +1303,27 @@ const initializeButtonInjection = () => {
     const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
 
     const observer = new MutationObserver((mutations) => {
-        // Always check for injection opportunities (don't stop after first injection)
-        debouncedInject();
+        // Skip if already stable
+        if (state.stableInjection) return;
+
+        // Only trigger on meaningful changes (added nodes in action areas)
+        const hasRelevantChanges = mutations.some(mutation => {
+            if (mutation.addedNodes.length === 0) return false;
+            // Check if changes are in areas we care about
+            return Array.from(mutation.addedNodes).some(node => {
+                if (node.nodeType !== Node.ELEMENT_NODE) return false;
+                const elem = node;
+                return elem.matches && (
+                    elem.matches('[class*="artdeco-button"]') ||
+                    elem.matches('[class*="scaffold-layout"]') ||
+                    elem.closest('[class*="profile"]')
+                );
+            });
+        });
+
+        if (hasRelevantChanges) {
+            debouncedInject();
+        }
     });
 
     observer.observe(document.body, {
@@ -1286,6 +1335,7 @@ const initializeButtonInjection = () => {
     state.observer = observer;
 
     // Continuous interval to catch any missed injection opportunities
+    // Will auto-stop once button is stable
     state.intervalId = setInterval(() => {
         injectButton();
     }, CONFIG.BUTTON_INJECT_RETRY);
