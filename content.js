@@ -1,4 +1,13 @@
 // ==========================
+// INITIALIZE LOGGER
+// ==========================
+
+// Initialize logger with debug mode
+(async () => {
+    await Logger.init();
+})();
+
+// ==========================
 // CONFIGURATION & STATE
 // ==========================
 
@@ -54,7 +63,7 @@ const debounce = (func, wait) => {
 const getCachedProfile = (url) => {
     const cached = state.profileCache.get(url);
     if (cached && Date.now() - cached.timestamp < CONFIG.CACHE_TTL) {
-        console.log('ColdEmailCopilot: Using cached profile data');
+        Logger.log('ColdEmailCopilot: Using cached profile data');
         return cached.data;
     }
     return null;
@@ -121,7 +130,7 @@ const scrapeProfile = () => {
             }
         }
     } catch (e) {
-        console.log('ColdEmailCopilot: Error extracting location:', e);
+        Logger.log('ColdEmailCopilot: Error extracting location:', e);
     }
 
     // About
@@ -153,7 +162,7 @@ const scrapeProfile = () => {
                     experiences.push(expString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing experience item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing experience item:', e);
             }
         });
     }
@@ -188,7 +197,7 @@ const scrapeProfile = () => {
                     education.push(eduString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing education item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing education item:', e);
             }
         });
     }
@@ -209,7 +218,7 @@ const scrapeProfile = () => {
                     skills.push(skillName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing skill item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing skill item:', e);
             }
         });
     }
@@ -233,7 +242,7 @@ const scrapeProfile = () => {
                     languages.push(langString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing language item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing language item:', e);
             }
         });
     }
@@ -257,7 +266,7 @@ const scrapeProfile = () => {
                     certifications.push(certString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing certification item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing certification item:', e);
             }
         });
     }
@@ -280,7 +289,7 @@ const scrapeProfile = () => {
                     volunteer.push(`${role} at ${organization}`);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing volunteer item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing volunteer item:', e);
             }
         });
     }
@@ -304,7 +313,7 @@ const scrapeProfile = () => {
                     awards.push(awardString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing award item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing award item:', e);
             }
         });
     }
@@ -325,7 +334,7 @@ const scrapeProfile = () => {
                     projects.push(projectName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing project item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing project item:', e);
             }
         });
     }
@@ -349,7 +358,7 @@ const scrapeProfile = () => {
                     publications.push(pubString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing publication item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing publication item:', e);
             }
         });
     }
@@ -370,7 +379,7 @@ const scrapeProfile = () => {
                     courses.push(courseName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing course item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing course item:', e);
             }
         });
     }
@@ -392,7 +401,7 @@ const scrapeProfile = () => {
                     testScores.push(testString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing test score item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing test score item:', e);
             }
         });
     }
@@ -416,7 +425,7 @@ const scrapeProfile = () => {
                     patents.push(patentString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing patent item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing patent item:', e);
             }
         });
     }
@@ -440,7 +449,7 @@ const scrapeProfile = () => {
                     organizations.push(orgString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing organization item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing organization item:', e);
             }
         });
     }
@@ -463,7 +472,7 @@ const scrapeProfile = () => {
                     recommendations.push(`${recommender}: "${text.substring(0, 150)}${text.length > 150 ? '...' : ''}"`);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing recommendation item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing recommendation item:', e);
             }
         });
     }
@@ -484,7 +493,7 @@ const scrapeProfile = () => {
                     featured.push(title);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing featured item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing featured item:', e);
             }
         });
     }
@@ -503,7 +512,7 @@ const scrapeProfile = () => {
                     interests.push(interestName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing interest item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing interest item:', e);
             }
         });
     }
@@ -529,7 +538,7 @@ const scrapeProfile = () => {
             }
         });
     } catch (e) {
-        console.log('ColdEmailCopilot: Error parsing profile header stats:', e);
+        Logger.log('ColdEmailCopilot: Error parsing profile header stats:', e);
     }
 
     // Contact Information (visible if expanded)
@@ -565,7 +574,7 @@ const scrapeProfile = () => {
             contactBirthday = birthdayEl.innerText?.trim() || '';
         }
     } catch (e) {
-        console.log('ColdEmailCopilot: Error parsing contact info:', e);
+        Logger.log('ColdEmailCopilot: Error parsing contact info:', e);
     }
 
     // Recent Activity/Posts
@@ -586,12 +595,12 @@ const scrapeProfile = () => {
                         activityPosts.push(truncated + (postText.length > 200 ? '...' : ''));
                     }
                 } catch (e) {
-                    console.log('ColdEmailCopilot: Error parsing activity post:', e);
+                    Logger.log('ColdEmailCopilot: Error parsing activity post:', e);
                 }
             });
         }
     } catch (e) {
-        console.log('ColdEmailCopilot: Error parsing activity section:', e);
+        Logger.log('ColdEmailCopilot: Error parsing activity section:', e);
     }
 
     const profileData = {
@@ -628,7 +637,7 @@ const scrapeProfile = () => {
     // Validate
     const validation = validateProfileData(profileData);
     if (!validation.valid) {
-        console.warn('ColdEmailCopilot: Profile data validation warnings:', validation.errors);
+        Logger.warn('ColdEmailCopilot: Profile data validation warnings:', validation.errors);
     }
 
     // Cache the result
@@ -658,7 +667,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 const runGeneration = async (instructions = '', senderName = null, includeQuestions = false, useWebGrounding = false) => {
     const profileData = scrapeProfile();
-    console.log('ColdEmailCopilot: Scraped Data:', profileData);
+    Logger.log('ColdEmailCopilot: Scraped Data:', profileData);
 
     try {
         const response = await chrome.runtime.sendMessage({
@@ -676,7 +685,7 @@ const runGeneration = async (instructions = '', senderName = null, includeQuesti
             showError('API_ERROR', response.error);
         }
     } catch (e) {
-        console.error(e);
+        Logger.error(e);
         showError('GENERATION_FAILED', e.message);
     }
 };
@@ -1141,7 +1150,7 @@ const createButton = () => {
 
             // Auto-recovery after 60 seconds
             generationTimeout = setTimeout(() => {
-                console.log('ColdEmailCopilot: Generation timeout, resetting button');
+                Logger.log('ColdEmailCopilot: Generation timeout, resetting button');
                 resetButton();
                 showToast('Generation timed out. Please try again.', 'error');
             }, 60000);
@@ -1152,7 +1161,7 @@ const createButton = () => {
 
             resetButton();
         } catch (err) {
-            console.error('ColdEmailCopilot: Button click error:', err);
+            Logger.error('ColdEmailCopilot: Button click error:', err);
             resetButton();
             showToast('An error occurred. Please try again.', 'error');
         }
@@ -1191,7 +1200,7 @@ const createButton = () => {
                 setTimeout(() => saveBtn.innerText = 'Save', 2000);
             }
         } catch (e) {
-            console.error('ColdEmailCopilot: Error saving profile:', e);
+            Logger.error('ColdEmailCopilot: Error saving profile:', e);
             saveBtn.innerText = 'Error';
         }
     });
@@ -1214,7 +1223,7 @@ const injectButton = () => {
         state.buttonInjected = false;
         state.stableInjection = false;
         state.injectAttempts = 0;
-        console.log('ColdEmailCopilot: URL changed, resetting button injection state');
+        Logger.log('ColdEmailCopilot: URL changed, resetting button injection state');
     }
     state.lastInjectedUrl = currentUrl;
 
@@ -1230,7 +1239,7 @@ const injectButton = () => {
             state.injectAttempts++;
             if (state.injectAttempts >= CONFIG.MAX_INJECT_ATTEMPTS) {
                 state.stableInjection = true;
-                console.log('ColdEmailCopilot: Button injection stable, stopping polls');
+                Logger.log('ColdEmailCopilot: Button injection stable, stopping polls');
                 // Stop interval to reduce detection
                 if (state.intervalId) {
                     clearInterval(state.intervalId);
@@ -1268,7 +1277,7 @@ const injectButton = () => {
     if (actionPanel && !document.querySelector('.cold-email-copilot-container')) {
         const btnContainer = createButton();
         actionPanel.appendChild(btnContainer);
-        console.log('ColdEmailCopilot: Buttons injected successfully');
+        Logger.log('ColdEmailCopilot: Buttons injected successfully');
         state.buttonInjected = true;
         state.injectAttempts = 0;
     }
@@ -1300,7 +1309,7 @@ let lastUrl = window.location.href;
 const detectUrlChange = () => {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
-        console.log('ColdEmailCopilot: URL change detected', lastUrl, '->', currentUrl);
+        Logger.log('ColdEmailCopilot: URL change detected', lastUrl, '->', currentUrl);
         lastUrl = currentUrl;
 
         // Reset state for new page
