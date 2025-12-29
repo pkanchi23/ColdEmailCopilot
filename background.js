@@ -177,7 +177,8 @@ Two things I'm curious about:
       - Ex: "Your move from [Company A] to [Company B] after only [X months] suggests you prioritized [Y]. I'm wrestling with similar decision..."
 
       STRUCTURE:
-      1. Intro: Casual introduction with name, role, background (1 sentence). CRITICAL: ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -", "John here -", etc.). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
+      1. Intro: Casual introduction with name, role, background (1 sentence). CRITICAL: ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start directly with: "I'm [Name], [role/context]..."
+      FORMATTING RULE: Do NOT include a salutation (e.g., "Hi Name") in the JSON body. Start directly with the first sentence.
       2. Connection: Find SPECIFIC points of intersection between YOUR journey and THEIRS. Make them think "this person really gets it."
       ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list with NO blank lines. Questions must reference SPECIFIC details from their profile (companies, roles, transitions, timeframes).` : '3. Ask for a quick call'}
       4. Closing: Ask for a quick call (NOT "15 mins", just "quick call"). Acknowledge busy schedule, thank sincerely. NEVER offer coffee.
@@ -294,7 +295,7 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
       SUBJECT: State YOUR PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about growth equity transition"). NEVER just describe their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"/"[A] to [B] move"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only. Return JSON: {"subject": "...", "body": "..."} (Body MUST NOT include "Hi [Name]").
       ALMA MATER: Never mention their school unless sender attended SAME one.
     `;
 
@@ -317,7 +318,8 @@ Two things I'm curious about:
             const staticInstructions = `You're a real person (NOT marketer/salesperson) writing a genuine cold email.
 
 CRITICAL RULES:
-1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
+1. BODY FORMAT: Do NOT include "Hi [Name]" or "Dear [Name]" in the JSON body. Start directly with the first sentence.
+2. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
 2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
 3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
 4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
@@ -332,6 +334,8 @@ CRITICAL RULES:
    Bad: "What made you switch to VC?"
    Good: "You joined Sequoia right when consumer was out of favor (2022) - what made you confident in the timing vs waiting for the cycle?"
 9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
+10. VISUAL STRUCTURE: Keep paragraphs SHORT (2-3 sentences max). Use line breaks to separate ideas. Avoid walls of text.
+11. BE CONCISE: Get to the point. Every sentence must earn its place.
 
 CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
@@ -465,6 +469,15 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (for similar ${cachedPattern.role} at 
         } catch (e) {
             console.warn('JSON parsing failed, using raw content:', e);
             emailDraft = { subject: "Intro", body: content };
+        }
+
+        // ENFORCE SALUTATION
+        if (profileData.name) {
+            const recipientFirst = profileData.name.trim().split(' ')[0];
+            // Remove existing salutation if model ignored instructions
+            let body = emailDraft.body.trim();
+            body = body.replace(/^(Hi|Hello|Dear)\s+.*?,?\s*(\n+)/i, '');
+            emailDraft.body = `Hi ${recipientFirst},\n\n${body}`;
         }
 
         // Debug logging for generated draft
