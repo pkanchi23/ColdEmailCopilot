@@ -476,7 +476,8 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (for similar ${cachedPattern.role} at 
             const recipientFirst = profileData.name.trim().split(' ')[0];
             // Remove existing salutation if model ignored instructions
             let body = emailDraft.body.trim();
-            body = body.replace(/^(Hi|Hello|Dear)\s+.*?,?\s*(\n+)/i, '');
+            // Match and remove greetings like "Hi Name,", "Hello Name", "Dear Name,\n\n" etc.
+            body = body.replace(/^(Hi|Hello|Dear)\s+[^,\n]+,?\s*(\n\n?)?/i, '');
             emailDraft.body = `Hi ${recipientFirst},\n\n${body}`;
         }
 
