@@ -278,9 +278,67 @@ async function handleGenerateDraft(requestData) {
             emailDraft = { subject: "Intro", body: content };
         }
 
+        // --- EMAIL PREDICTION LOGIC ---
+        let predictedEmail = null;
+        if (financeRecruitingMode && profileData.experience && profileData.name) {
+            const FINANCE_DOMAINS = {
+                "Goldman Sachs": { domain: "gs.com", format: "first.last" },
+                "Morgan Stanley": { domain: "morganstanley.com", format: "first.last" },
+                "J.P. Morgan": { domain: "jpmorgan.com", format: "first.last" },
+                "Bank of America": { domain: "bofa.com", format: "first.last" },
+                "Citi": { domain: "citi.com", format: "first.last" },
+                "Barclays": { domain: "barclays.com", format: "first.last" },
+                "UBS": { domain: "ubs.com", format: "first.last" },
+                "Deutsche Bank": { domain: "db.com", format: "first.last" },
+                "Evercore": { domain: "evercore.com", format: "first.last" },
+                "Centerview": { domain: "centerview.com", format: "flast" },
+                "Lazard": { domain: "lazard.com", format: "first.last" },
+                "PJT Partners": { domain: "pjtpartners.com", format: "first.last" },
+                "Moelis & Co.": { domain: "moelis.com", format: "first.last" },
+                "Qatalyst Partners": { domain: "qatalyst.com", format: "first.last" },
+                "Guggenheim": { domain: "guggenheimpartners.com", format: "first.last" },
+                "Perella Weinberg": { domain: "pwpartners.com", format: "flast" },
+                "Jefferies": { domain: "jefferies.com", format: "flast" },
+                "Houlihan Lokey": { domain: "hl.com", format: "flast" },
+                "William Blair": { domain: "williamblair.com", format: "flast" },
+                "RBC Capital Mkts": { domain: "rbccm.com", format: "first.last" },
+                "RBC": { domain: "rbccm.com", format: "first.last" },
+                "BMO Capital Mkts": { domain: "bmo.com", format: "first.last" },
+                "BMO": { domain: "bmo.com", format: "first.last" },
+                "Piper Sandler": { domain: "psc.com", format: "first.last" },
+                "Raymond James": { domain: "raymondjames.com", format: "first.last" },
+                "Rothschild & Co": { domain: "rothschildandco.com", format: "first.last" },
+                "Stifel": { domain: "stifel.com", format: "lastf" },
+                "Wells Fargo": { domain: "wellsfargo.com", format: "first.last" }
+            };
+
+            const currentCompany = profileData.experience.split('\n')[0].split(' at ')[1]; // Heuristic to get company
+            if (currentCompany) {
+                // Find matching company
+                const companyKey = Object.keys(FINANCE_DOMAINS).find(key =>
+                    currentCompany.toLowerCase().includes(key.toLowerCase()) ||
+                    key.toLowerCase().includes(currentCompany.toLowerCase())
+                );
+
+                if (companyKey) {
+                    const { domain, format } = FINANCE_DOMAINS[companyKey];
+                    const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.')); // Remove titles like "Mr." if simple split
+                    // Basic name parsing (first last)
+                    if (nameParts.length >= 2) {
+                        const first = nameParts[0].replace(/[^a-z]/g, '');
+                        const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
+
+                        if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}`;
+                        else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}`;
+                        else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}`;
+                    }
+                }
+            }
+        }
+
         // --- GMAIL API INTEGRATION ---
         const token = await getAuthToken();
-        const mimeMessage = createMimeMessage(emailDraft.subject, emailDraft.body, profileData.name);
+        const mimeMessage = createMimeMessage(emailDraft.subject, emailDraft.body, predictedEmail);
         const draft = await createDraft(token, mimeMessage);
 
         const gmailUrl = `https://mail.google.com/mail/u/0/#drafts?compose=${draft.message.id}`;
@@ -345,21 +403,29 @@ async function getAuthToken() {
     });
 }
 
-function createMimeMessage(subject, body, toName) {
+function createMimeMessage(subject, body, toEmail) {
     const nl = '\r\n';
-    const emailContent = [
-        `Subject: ${subject}`,
-        'Content-Type: text/plain; charset="UTF-8"',
-        'MIME-Version: 1.0',
-        '',
-        body
-    ].join(nl);
+    let emailContent = [];
 
-    return btoa(unescape(encodeURIComponent(emailContent)))
+    if (toEmail) {
+        emailContent.push(`To: ${toEmail}`);
+    }
+
+    emailContent.push(`Subject: ${subject}`);
+    emailContent.push('Content-Type: text/plain; charset="UTF-8"');
+    emailContent.push('MIME-Version: 1.0');
+    emailContent.push('');
+    emailContent.push(body);
+
+    const joinedContent = emailContent.join(nl);
+
+    return btoa(unescape(encodeURIComponent(joinedContent)))
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
         .replace(/=+$/, '');
 }
+
+
 
 async function createDraft(token, rawMessage) {
     const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
