@@ -145,6 +145,13 @@
       <label for="debugMode" style="margin-bottom: 0; cursor: pointer;">Debug Mode</label>
     </div>
     <p class="info" style="margin-top: -10px;">Shows scraped data and prompts in console. Skips Gmail open for testing.</p>
+
+    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+      <input type="checkbox" id="webGrounding" style="width: 18px; height: 18px;">
+      <label for="webGrounding" style="margin-bottom: 0; cursor: pointer;">Web Grounding <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">EXPERIMENTAL</span></label>
+    </div>
+    <p class="info" style="margin-top: -10px;">⚠️ Claude/Anthropic only. Uses web search to find recent news (e.g., funding rounds, portfolio companies) to include in emails when relevant.</p>
+
     <div class="form-group" style="margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
       <label for="apiKey">OpenAI API Key</label>
       <input type="password" id="apiKey" placeholder="sk-...">

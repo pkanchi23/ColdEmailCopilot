@@ -10,6 +10,7 @@ const saveOptions = () => {
   const exampleEmail = document.getElementById('exampleEmail').value;
   const financeRecruitingMode = document.getElementById('financeRecruitingMode').checked;
   const debugMode = document.getElementById('debugMode').checked;
+  const webGrounding = document.getElementById('webGrounding').checked;
 
   if (!apiKey && !anthropicApiKey) {
     showStatus('Please enter at least one API Key.', 'error');
@@ -30,7 +31,8 @@ const saveOptions = () => {
       tone: tone,
       exampleEmail: exampleEmail,
       financeRecruitingMode: financeRecruitingMode,
-      debugMode: debugMode
+      debugMode: debugMode,
+      webGrounding: webGrounding
     },
     () => {
       showStatus('Settings saved successfully!', 'success');
@@ -50,7 +52,8 @@ const restoreOptions = () => {
       tone: 'Casual & Friendly',
       exampleEmail: '',
       financeRecruitingMode: false,
-      debugMode: false
+      debugMode: false,
+      webGrounding: false
     },
     (items) => {
       document.getElementById('apiKey').value = items.openAiApiKey;
@@ -62,6 +65,7 @@ const restoreOptions = () => {
       document.getElementById('exampleEmail').value = items.exampleEmail;
       document.getElementById('financeRecruitingMode').checked = items.financeRecruitingMode;
       document.getElementById('debugMode').checked = items.debugMode;
+      document.getElementById('webGrounding').checked = items.webGrounding;
 
       // Check if saved model is in the dropdown
       const modelSelect = document.getElementById('model');

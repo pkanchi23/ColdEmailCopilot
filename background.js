@@ -2,6 +2,61 @@
 let cachedToken = null;
 let tokenExpiry = null;
 
+// --- Web Grounding Helper ---
+async function performWebSearch(profileData, anthropicApiKey) {
+    // Construct search query based on profile
+    const company = profileData.experience?.split('\n')[0]?.split(' at ')[1]?.split('(')[0]?.trim();
+    const name = profileData.name;
+
+    if (!company || !name) {
+        return null;
+    }
+
+    const searchQuery = `${name} ${company} news recent funding portfolio`;
+
+    try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'x-api-key': anthropicApiKey,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-5',
+                max_tokens: 500,
+                messages: [{
+                    role: 'user',
+                    content: `Search for recent news about ${name} at ${company}. Focus on: funding rounds, new portfolio companies (if VC), product launches, or career moves. If nothing recent/relevant found, say "NO_RELEVANT_NEWS". Be very concise (2-3 sentences max).`
+                }],
+                tools: [{
+                    type: 'web_search_20241101'
+                }]
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            console.error('Web search error:', data.error);
+            return null;
+        }
+
+        // Extract text from response
+        const textContent = data.content?.find(c => c.type === 'text')?.text || '';
+
+        // Check if no relevant news
+        if (textContent.includes('NO_RELEVANT_NEWS') || textContent.length < 10) {
+            return null;
+        }
+
+        return textContent;
+    } catch (error) {
+        console.error('Web search failed:', error);
+        return null;
+    }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'generateDraft') {
         handleGenerateDraft(request.data)
@@ -17,6 +72,7 @@ async function handleGenerateDraft(requestData) {
         const specialInstructions = requestData.instructions || '';
         let dynamicSenderName = requestData.senderName;
         const includeQuestions = requestData.includeQuestions || false;
+        const useWebGrounding = requestData.useWebGrounding || false;
 
         const {
             openAiApiKey,
@@ -49,6 +105,18 @@ async function handleGenerateDraft(requestData) {
 
         // Extract first name for signature
         const firstName = finalSenderName.split(' ')[0];
+
+        // Perform web search if Web Grounding is enabled
+        let webGroundingContext = null;
+        if (useWebGrounding && model.startsWith('claude-') && anthropicApiKey) {
+            if (debugMode) {
+                console.log('=== WEB GROUNDING ENABLED ===');
+            }
+            webGroundingContext = await performWebSearch(profileData, anthropicApiKey);
+            if (debugMode && webGroundingContext) {
+                console.log('Web Grounding Result:', webGroundingContext);
+            }
+        }
 
         // Smart caching: Check for similar company+role pattern
         let cachedPattern = null;
@@ -158,6 +226,11 @@ Two things I'm curious about:
 
       SENDER: ${userContext || 'Not provided'}
 
+      ${webGroundingContext ? `RECENT NEWS / CONTEXT (use if highly relevant to build connection):
+      ${webGroundingContext}
+
+      WEB GROUNDING USAGE: Only mention if it creates a genuine connection point (e.g., "congrats on the raise", "saw portfolio company X", "noticed your recent launch"). NEVER force it if not naturally relevant. Skip entirely if unclear or generic.` : ''}
+
       CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
       ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
@@ -261,6 +334,11 @@ Experience (chronological): ${profileData.experience}
 Analyze FULL career trajectory (patterns, transitions, story arc), not just current role.
 
 SENDER: ${userContext || 'Not provided'}
+
+${webGroundingContext ? `RECENT NEWS / CONTEXT (use if highly relevant to build connection):
+${webGroundingContext}
+
+WEB GROUNDING USAGE: Only mention if it creates a genuine connection point (e.g., "congrats on the raise", "saw portfolio company X", "noticed your recent launch"). NEVER force it if not naturally relevant. Skip entirely if unclear or generic.` : ''}
 
 ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
 ${exampleEmail ? `STYLE REF (match vibe): ${exampleEmail}` : ''}
