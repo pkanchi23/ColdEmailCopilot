@@ -4,10 +4,11 @@
 
 const CONFIG = {
     CACHE_TTL: 5 * 60 * 1000, // 5 minutes
-    DEBOUNCE_DELAY: 500, // ms
+    DEBOUNCE_DELAY: 200, // ms - reduced for faster response
     MAX_EXPERIENCES: 5,
     MAX_EDUCATION: 2,
-    BUTTON_INJECT_RETRY: 3000 // ms
+    BUTTON_INJECT_RETRY: 500, // ms - reduced for faster retries
+    INITIAL_DELAY: 100 // ms - small delay for DOM to settle
 };
 
 // State
@@ -626,30 +627,44 @@ document.addEventListener('keydown', (e) => {
 // INITIALIZATION
 // ==========================
 
-// Run immediately
-injectButton();
-
-// Debounced observer
-const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
-
-const observer = new MutationObserver((mutations) => {
-    // Only react if we haven't injected yet
-    if (!state.buttonInjected) {
-        debouncedInject();
-    }
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
-
-// Fallback interval (will stop after first successful injection)
-state.intervalId = setInterval(() => {
-    if (!state.buttonInjected) {
+// Wait for DOM to be ready before first injection attempt
+const initializeButtonInjection = () => {
+    // Initial injection with small delay for DOM to settle
+    setTimeout(() => {
         injectButton();
-    } else {
-        clearInterval(state.intervalId);
-        state.intervalId = null;
-    }
-}, CONFIG.BUTTON_INJECT_RETRY);
+    }, CONFIG.INITIAL_DELAY);
+
+    // Debounced observer for DOM changes
+    const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
+
+    const observer = new MutationObserver((mutations) => {
+        // Only react if we haven't injected yet
+        if (!state.buttonInjected) {
+            debouncedInject();
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Fallback interval (will stop after first successful injection)
+    state.intervalId = setInterval(() => {
+        if (!state.buttonInjected) {
+            injectButton();
+        } else {
+            clearInterval(state.intervalId);
+            state.intervalId = null;
+        }
+    }, CONFIG.BUTTON_INJECT_RETRY);
+};
+
+// Start initialization based on document ready state
+if (document.readyState === 'loading') {
+    // DOM not ready yet, wait for DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', initializeButtonInjection);
+} else {
+    // DOM already loaded, initialize immediately
+    initializeButtonInjection();
+}
