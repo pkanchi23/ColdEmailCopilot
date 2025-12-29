@@ -464,65 +464,414 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // --- EMAIL PREDICTION LOGIC ---
         let predictedEmail = null;
-        if (financeRecruitingMode && profileData.experience && profileData.name) {
-            const FINANCE_DOMAINS = {
-                "Goldman Sachs": { domain: "gs.com", format: "first.last" },
-                "Morgan Stanley": { domain: "morganstanley.com", format: "first.last" },
-                "J.P. Morgan": { domain: "jpmorgan.com", format: "first.last" },
-                "Bank of America": { domain: "bofa.com", format: "first.last" },
-                "Citi": { domain: "citi.com", format: "first.last" },
-                "Barclays": { domain: "barclays.com", format: "first.last" },
-                "UBS": { domain: "ubs.com", format: "first.last" },
-                "Deutsche Bank": { domain: "db.com", format: "first.last" },
-                "Evercore": { domain: "evercore.com", format: "first.last" },
-                "Centerview": { domain: "centerview.com", format: "flast" },
-                "Lazard": { domain: "lazard.com", format: "first.last" },
-                "PJT Partners": { domain: "pjtpartners.com", format: "first.last" },
-                "Moelis & Co.": { domain: "moelis.com", format: "first.last" },
-                "Qatalyst Partners": { domain: "qatalyst.com", format: "first.last" },
-                "Guggenheim": { domain: "guggenheimpartners.com", format: "first.last" },
-                "Perella Weinberg": { domain: "pwpartners.com", format: "flast" },
-                "Jefferies": { domain: "jefferies.com", format: "flast" },
-                "Houlihan Lokey": { domain: "hl.com", format: "flast" },
-                "William Blair": { domain: "williamblair.com", format: "flast" },
-                "RBC Capital Mkts": { domain: "rbccm.com", format: "first.last" },
-                "RBC": { domain: "rbccm.com", format: "first.last" },
-                "BMO Capital Mkts": { domain: "bmo.com", format: "first.last" },
-                "BMO": { domain: "bmo.com", format: "first.last" },
-                "Piper Sandler": { domain: "psc.com", format: "first.last" },
-                "Raymond James": { domain: "raymondjames.com", format: "first.last" },
-                "Rothschild & Co": { domain: "rothschildandco.com", format: "first.last" },
-                "Stifel": { domain: "stifel.com", format: "lastf" },
-                "Wells Fargo": { domain: "wellsfargo.com", format: "first.last" }
-            };
+        let predictedBcc = null;
+
+        // Helper function to parse email format templates
+        const parseEmailFormat = (template, first, last) => {
+            if (!template) return null;
+            return template
+                .replace('{first}', first)
+                .replace('{last}', last)
+                .replace('{f}', first[0])
+                .replace('{l}', last[0])
+                .replace('{last_initial}', last[0]);
+        };
+
+        if (profileData.experience && profileData.name) {
+            // Comprehensive company email format database
+            const COMPANY_EMAIL_FORMATS = [
+                // AI & Deep Tech
+                {"company": "Safe Superintelligence", "format": "{first}@ssi.inc", "alt": "{first}{last}@ssi.inc"},
+                {"company": "SSI", "format": "{first}@ssi.inc", "alt": "{first}{last}@ssi.inc"},
+                {"company": "Anthropic", "format": "{first}@anthropic.com", "alt": "{f}{last}@anthropic.com"},
+                {"company": "OpenAI", "format": "{f}{last}@openai.com", "alt": "{first}@openai.com"},
+                {"company": "Mistral AI", "format": "{first}@mistral.ai", "alt": "{f}{last}@mistral.ai"},
+                {"company": "Mistral", "format": "{first}@mistral.ai", "alt": "{f}{last}@mistral.ai"},
+                {"company": "Perplexity", "format": "{first}@perplexity.ai", "alt": "{first}.{last}@perplexity.ai"},
+                {"company": "Cohere", "format": "{first}@cohere.com", "alt": "{first}@cohere.ai"},
+                {"company": "Midjourney", "format": "{f}{last}@midjourney.com", "alt": "{first}@midjourney.com"},
+                {"company": "Black Forest Labs", "format": "{first}@blackforestlabs.ai", "alt": ""},
+                {"company": "World Labs", "format": "{first}@worldlabs.ai", "alt": ""},
+                {"company": "Poolside", "format": "{first}@poolside.ai", "alt": ""},
+                {"company": "Hugging Face", "format": "{first}@huggingface.co", "alt": ""},
+                {"company": "Scale AI", "format": "{first}.{last}@scale.com", "alt": "{first}@scale.com"},
+                {"company": "Scale", "format": "{first}.{last}@scale.com", "alt": "{first}@scale.com"},
+                {"company": "Shield AI", "format": "{first}.{last}@shield.ai", "alt": ""},
+                {"company": "Databricks", "format": "{first}.{last}@databricks.com", "alt": "{first}@databricks.com"},
+                {"company": "Glean", "format": "{first}.{last}@glean.com", "alt": "{first}@glean.com"},
+                {"company": "Jasper", "format": "{first}.{last}@jasper.ai", "alt": ""},
+                {"company": "RunwayML", "format": "{first}@runwayml.com", "alt": ""},
+                {"company": "Runway", "format": "{first}@runwayml.com", "alt": ""},
+                {"company": "Deepgram", "format": "{first}.{last}@deepgram.com", "alt": ""},
+                {"company": "Seven AI", "format": "{first}@seven.ai", "alt": ""},
+                {"company": "Together AI", "format": "{first}@together.ai", "alt": ""},
+                {"company": "Together", "format": "{first}@together.ai", "alt": ""},
+                {"company": "IonQ", "format": "{first}.{last}@ionq.com", "alt": ""},
+                {"company": "Sandbox AQ", "format": "{first}.{last}@sandboxaq.com", "alt": ""},
+                {"company": "Decagon", "format": "{first}@decagon.ai", "alt": ""},
+                {"company": "Writer", "format": "{first}@writer.com", "alt": "{first}.{last}@writer.com"},
+                {"company": "ElevenLabs", "format": "{first}@elevenlabs.io", "alt": ""},
+                {"company": "Abridge", "format": "{last}{f}@abridge.com", "alt": "{first}@abridge.com"},
+                {"company": "Anduril", "format": "{first}@anduril.com", "alt": "{last}@anduril.com"},
+                {"company": "Applied Intuition", "format": "{f}{last}@appliedintuition.com", "alt": ""},
+                {"company": "Cognition", "format": "{first}@cognition.ai", "alt": ""},
+                {"company": "Fireworks AI", "format": "{first}@fireworks.ai", "alt": ""},
+                {"company": "Fireworks", "format": "{first}@fireworks.ai", "alt": ""},
+                {"company": "Harvey", "format": "{first}@harvey.ai", "alt": ""},
+                {"company": "Mercor", "format": "{first}{last}@mercor.com", "alt": ""},
+                {"company": "Sierra", "format": "{first}@sierra.ai", "alt": ""},
+                {"company": "Statsig", "format": "{first}@statsig.com", "alt": ""},
+                {"company": "Surge AI", "format": "{first}@surgehq.ai", "alt": ""},
+                {"company": "Thinking Machines", "format": "{first}@thinkingmachines.ai", "alt": ""},
+                {"company": "Turing", "format": "{first}.{last}@turing.com", "alt": ""},
+                {"company": "LlamaIndex", "format": "{first}@llamaindex.ai", "alt": ""},
+                {"company": "LangChain", "format": "{f}{last}@langchain.com", "alt": ""},
+                {"company": "Patronus AI", "format": "{first}@patronus.ai", "alt": ""},
+                {"company": "Patronus", "format": "{first}@patronus.ai", "alt": ""},
+                {"company": "Sakana AI", "format": "{first}@sakana.ai", "alt": ""},
+                {"company": "Sakana", "format": "{first}@sakana.ai", "alt": ""},
+                {"company": "SambaNova", "format": "{first}.{last}@sambanova.ai", "alt": ""},
+                {"company": "Snorkel", "format": "{first}@snorkel.ai", "alt": ""},
+                {"company": "Synthesia", "format": "{first}.{last}@synthesia.io", "alt": ""},
+                {"company": "Tonic", "format": "{first}@tonic.ai", "alt": ""},
+                {"company": "Unstructured", "format": "{first}@unstructured.io", "alt": ""},
+                {"company": "Anyscale", "format": "{first}@anyscale.com", "alt": ""},
+                {"company": "Arize", "format": "{first}@arize.com", "alt": ""},
+                {"company": "Baseten", "format": "{first}@baseten.co", "alt": ""},
+                {"company": "Fiddler", "format": "{first}@fiddler.ai", "alt": ""},
+                {"company": "Lightning AI", "format": "{first}@lightning.ai", "alt": ""},
+                {"company": "Lightning", "format": "{first}@lightning.ai", "alt": ""},
+                {"company": "Modular", "format": "{first}@modular.com", "alt": ""},
+                {"company": "Pinecone", "format": "{first}@pinecone.io", "alt": ""},
+
+                // DevTools & Infra
+                {"company": "Vercel", "format": "{first}.{last}@vercel.com", "alt": "{first}@vercel.com"},
+                {"company": "Replit", "format": "{first}@replit.com", "alt": "{first}@repl.it"},
+                {"company": "Supabase", "format": "{first}@supabase.com", "alt": "{first}@supabase.io"},
+                {"company": "Cursor", "format": "{first}@cursor.so", "alt": "{first}@cursor.com"},
+                {"company": "Anysphere", "format": "{first}@cursor.so", "alt": "{first}@anysphere.co"},
+                {"company": "Lovable", "format": "{first}@lovable.dev", "alt": ""},
+                {"company": "Warp", "format": "{first}@warp.dev", "alt": ""},
+                {"company": "ClickUp", "format": "{f}{last}@clickup.com", "alt": ""},
+                {"company": "Grafana Labs", "format": "{first}.{last}@grafana.com", "alt": ""},
+                {"company": "Grafana", "format": "{first}.{last}@grafana.com", "alt": ""},
+                {"company": "Confluent", "format": "{first}.{last}@confluent.io", "alt": ""},
+                {"company": "HashiCorp", "format": "{first}.{last}@hashicorp.com", "alt": ""},
+                {"company": "Docker", "format": "{first}.{last}@docker.com", "alt": ""},
+                {"company": "PostHog", "format": "{first}@posthog.com", "alt": ""},
+                {"company": "Sentry", "format": "{first}.{last}@sentry.io", "alt": ""},
+                {"company": "Kong", "format": "{first}@konghq.com", "alt": ""},
+                {"company": "MinIO", "format": "{first}@min.io", "alt": ""},
+                {"company": "Redis", "format": "{first}.{last}@redis.com", "alt": ""},
+                {"company": "MongoDB", "format": "{first}.{last}@mongodb.com", "alt": ""},
+                {"company": "Elastic", "format": "{first}.{last}@elastic.co", "alt": ""},
+                {"company": "Twilio", "format": "{first}.{last}@twilio.com", "alt": ""},
+                {"company": "Cloudflare", "format": "{f}{last}@cloudflare.com", "alt": "{first}@cloudflare.com"},
+                {"company": "Groq", "format": "{f}{last}@groq.com", "alt": ""},
+                {"company": "CoreWeave", "format": "{f}{last}@coreweave.com", "alt": "{first}@coreweave.com"},
+                {"company": "Lambda Labs", "format": "{first}@lambdalabs.com", "alt": ""},
+                {"company": "Vast Data", "format": "{first}@vastdata.com", "alt": ""},
+                {"company": "Vast", "format": "{first}@vastdata.com", "alt": ""},
+                {"company": "Anaconda", "format": "{f}{last}@anaconda.com", "alt": ""},
+                {"company": "Augment Code", "format": "{first}@augmentcode.com", "alt": ""},
+                {"company": "Augment", "format": "{first}@augmentcode.com", "alt": ""},
+                {"company": "Clay", "format": "{first}.{last}@clay.com", "alt": "{first}@clay.run"},
+                {"company": "Cline", "format": "{first}@cline.bot", "alt": ""},
+                {"company": "Crusoe", "format": "{f}{last}@crusoeenergy.com", "alt": "{first}@crusoe.ai"},
+                {"company": "Framer", "format": "{first}@framer.com", "alt": ""},
+                {"company": "MotherDuck", "format": "{first}@motherduck.com", "alt": ""},
+                {"company": "n8n", "format": "{first}@n8n.io", "alt": ""},
+                {"company": "Sourcegraph", "format": "{first}@sourcegraph.com", "alt": ""},
+                {"company": "StackBlitz", "format": "{first}@stackblitz.com", "alt": ""},
+                {"company": "Tines", "format": "{f}{last}@tines.com", "alt": ""},
+                {"company": "ClickHouse", "format": "{first}@clickhouse.com", "alt": ""},
+                {"company": "Cribl", "format": "{f}{last}@cribl.io", "alt": ""},
+                {"company": "DBT Labs", "format": "{first}.{last}@dbtlabs.com", "alt": ""},
+                {"company": "dbt Labs", "format": "{first}.{last}@dbtlabs.com", "alt": ""},
+                {"company": "Fivetran", "format": "{first}.{last}@fivetran.com", "alt": ""},
+                {"company": "Harness", "format": "{first}.{last}@harness.io", "alt": ""},
+                {"company": "Lightmatter", "format": "{first}.{last}@lightmatter.co", "alt": ""},
+                {"company": "Sonar", "format": "{first}.{last}@sonarsource.com", "alt": ""},
+                {"company": "Substrate", "format": "{first}@substrate.run", "alt": ""},
+                {"company": "Temporal", "format": "{first}.{last}@temporal.io", "alt": ""},
+                {"company": "Boomi", "format": "{first}.{last}@boomi.com", "alt": ""},
+                {"company": "New Relic", "format": "{first}.{last}@newrelic.com", "alt": ""},
+                {"company": "OutSystems", "format": "{first}.{last}@outsystems.com", "alt": ""},
+                {"company": "Qumulo", "format": "{first}.{last}@qumulo.com", "alt": ""},
+                {"company": "Rescale", "format": "{first}.{last}@rescale.com", "alt": ""},
+                {"company": "Spectro Cloud", "format": "{first}.{last}@spectrocloud.com", "alt": ""},
+                {"company": "Chainguard", "format": "{first}@chainguard.dev", "alt": ""},
+                {"company": "Fal", "format": "{first}@fal.ai", "alt": ""},
+                {"company": "Seven", "format": "{first}@seven.ai", "alt": ""},
+                {"company": "Unity", "format": "{first}.{last}@unity3d.com", "alt": ""},
+                {"company": "NetApp", "format": "{first}.{last}@netapp.com", "alt": ""},
+                {"company": "Nutanix", "format": "{first}.{last}@nutanix.com", "alt": ""},
+                {"company": "MuleSoft", "format": "{first}.{last}@mulesoft.com", "alt": ""},
+                {"company": "Redgate", "format": "{first}.{last}@red-gate.com", "alt": ""},
+                {"company": "Rubrik", "format": "{first}.{last}@rubrik.com", "alt": ""},
+                {"company": "SUSE", "format": "{first}.{last}@suse.com", "alt": ""},
+                {"company": "Canonical", "format": "{first}.{last}@canonical.com", "alt": ""},
+
+                // Cybersecurity
+                {"company": "CrowdStrike", "format": "{first}.{last}@crowdstrike.com", "alt": ""},
+                {"company": "Palo Alto Networks", "format": "{f}{last}@paloaltonetworks.com", "alt": ""},
+                {"company": "Zscaler", "format": "{first}.{last}@zscaler.com", "alt": ""},
+                {"company": "Wiz", "format": "{first}.{last}@wiz.io", "alt": ""},
+                {"company": "Snyk", "format": "{first}.{last}@snyk.io", "alt": ""},
+                {"company": "Darktrace", "format": "{first}.{last}@darktrace.com", "alt": ""},
+                {"company": "Arctic Wolf", "format": "{first}.{last}@arcticwolf.com", "alt": ""},
+                {"company": "KnowBe4", "format": "{first}{l}@knowbe4.com", "alt": ""},
+                {"company": "Abnormal Security", "format": "{f}{last}@abnormalsecurity.com", "alt": ""},
+                {"company": "Abnormal", "format": "{f}{last}@abnormalsecurity.com", "alt": ""},
+                {"company": "Huntress", "format": "{first}.{last}@huntress.com", "alt": ""},
+                {"company": "Tanium", "format": "{first}.{last}@tanium.com", "alt": ""},
+                {"company": "SentinelOne", "format": "{first}.{last}@sentinelone.com", "alt": ""},
+                {"company": "Vanta", "format": "{first}.{last}@vanta.com", "alt": ""},
+                {"company": "CyberArk", "format": "{first}.{last}@cyberark.com", "alt": ""},
+                {"company": "Okta", "format": "{first}.{last}@okta.com", "alt": ""},
+                {"company": "Nord Security", "format": "{first}.{last}@nordsec.com", "alt": ""},
+                {"company": "1Password", "format": "{first}.{last}@1password.com", "alt": ""},
+                {"company": "Everfox", "format": "{first}.{last}@everfox.com", "alt": ""},
+                {"company": "Coalition", "format": "{first}@coalitioninc.com", "alt": ""},
+                {"company": "Torq", "format": "{first}.{last}@torq.io", "alt": ""},
+                {"company": "Armis", "format": "{first}.{last}@armis.com", "alt": ""},
+                {"company": "Cyera", "format": "{first}.{last}@cyera.io", "alt": ""},
+                {"company": "Delinea", "format": "{first}.{last}@delinea.com", "alt": ""},
+                {"company": "Island", "format": "{first}.{last}@island.io", "alt": ""},
+                {"company": "NinjaOne", "format": "{first}.{last}@ninjaone.com", "alt": "{first}.{last}@ninjarmm.com"},
+                {"company": "Ping Identity", "format": "{first}.{last}@pingidentity.com", "alt": ""},
+                {"company": "Ping", "format": "{first}.{last}@pingidentity.com", "alt": ""},
+                {"company": "Proofpoint", "format": "{first}.{last}@proofpoint.com", "alt": ""},
+                {"company": "Verkada", "format": "{first}.{last}@verkada.com", "alt": ""},
+                {"company": "Cato Networks", "format": "{first}.{last}@catonetworks.com", "alt": ""},
+                {"company": "Cato", "format": "{first}.{last}@catonetworks.com", "alt": ""},
+                {"company": "Illumio", "format": "{first}.{last}@illumio.com", "alt": ""},
+                {"company": "ReliaQuest", "format": "{first}.{last}@reliaquest.com", "alt": ""},
+                {"company": "Axonius", "format": "{first}.{last}@axonius.com", "alt": ""},
+                {"company": "Kaseya", "format": "{first}.{last}@kaseya.com", "alt": ""},
+                {"company": "SailPoint", "format": "{first}.{last}@sailpoint.com", "alt": ""},
+                {"company": "Fortinet", "format": "{first}.{last}@fortinet.com", "alt": ""},
+                {"company": "Axiad", "format": "{first}.{last}@axiad.com", "alt": ""},
+
+                // SaaS & Enterprise
+                {"company": "Salesforce", "format": "{f}{last}@salesforce.com", "alt": "{first}.{last}@salesforce.com"},
+                {"company": "ServiceNow", "format": "{first}.{last}@servicenow.com", "alt": ""},
+                {"company": "Workday", "format": "{first}.{last}@workday.com", "alt": ""},
+                {"company": "Adobe", "format": "{f}{last}@adobe.com", "alt": ""},
+                {"company": "HubSpot", "format": "{first}.{last}@hubspot.com", "alt": ""},
+                {"company": "Notion", "format": "{first}.{last}@makenotion.com", "alt": "{first}@makenotion.com"},
+                {"company": "Airtable", "format": "{first}.{last}@airtable.com", "alt": ""},
+                {"company": "Figma", "format": "{first}.{last}@figma.com", "alt": "{first}@figma.com"},
+                {"company": "Miro", "format": "{first}.{last}@miro.com", "alt": ""},
+                {"company": "Loom", "format": "{first}.{last}@loom.com", "alt": ""},
+                {"company": "Scribe", "format": "{first}@scribehow.com", "alt": ""},
+                {"company": "Air", "format": "{first}@air.inc", "alt": ""},
+                {"company": "ServiceTitan", "format": "{f}{last}@servicetitan.com", "alt": ""},
+                {"company": "Samsara", "format": "{first}.{last}@samsara.com", "alt": ""},
+                {"company": "Toast", "format": "{first}.{last}@toasttab.com", "alt": ""},
+                {"company": "Shopify", "format": "{first}.{last}@shopify.com", "alt": ""},
+                {"company": "Atlassian", "format": "{first}.{last}@atlassian.com", "alt": ""},
+                {"company": "Zoom", "format": "{first}.{last}@zoom.us", "alt": ""},
+                {"company": "Box", "format": "{first}.{last}@box.com", "alt": ""},
+                {"company": "Dropbox", "format": "{first}.{last}@dropbox.com", "alt": ""},
+                {"company": "DocuSign", "format": "{first}.{last}@docusign.com", "alt": ""},
+                {"company": "Procore", "format": "{first}.{last}@procore.com", "alt": ""},
+                {"company": "CrewAI", "format": "{first}@crewai.com", "alt": ""},
+                {"company": "Crew AI", "format": "{first}@crewai.com", "alt": ""},
+                {"company": "EvenUp", "format": "{first}.{last}@evenuplaw.com", "alt": ""},
+                {"company": "BambooHR", "format": "{f}{last}@bamboohr.com", "alt": ""},
+                {"company": "Blue Yonder", "format": "{first}.{last}@blueyonder.com", "alt": ""},
+                {"company": "Clio", "format": "{first}.{last}@clio.com", "alt": ""},
+                {"company": "Cohesity", "format": "{first}.{last}@cohesity.com", "alt": ""},
+                {"company": "Dialpad", "format": "{first}.{last}@dialpad.com", "alt": ""},
+                {"company": "Doctolib", "format": "{first}.{last}@doctolib.com", "alt": ""},
+                {"company": "Elementum", "format": "{f}{last}@elementum.com", "alt": ""},
+                {"company": "Gong", "format": "{first}.{last}@gong.io", "alt": ""},
+                {"company": "Kraken", "format": "{first}.{last}@octopus.energy", "alt": "{first}.{last}@krakenflex.com"},
+                {"company": "Locus", "format": "{first}.{last}@locus.sh", "alt": ""},
+                {"company": "Mindbody", "format": "{first}.{last}@mindbodyonline.com", "alt": ""},
+                {"company": "PsiQuantum", "format": "{first}.{last}@psiquantum.com", "alt": ""},
+                {"company": "Rippling", "format": "{first}.{last}@rippling.com", "alt": ""},
+                {"company": "StackAdapt", "format": "{first}.{last}@stackadapt.com", "alt": ""},
+                {"company": "Superhuman", "format": "{first}@superhuman.com", "alt": ""},
+                {"company": "Tekion", "format": "{first}.{last}@tekion.com", "alt": ""},
+                {"company": "Uniphore", "format": "{first}.{last}@uniphore.com", "alt": ""},
+                {"company": "Celonis", "format": "{first}.{last}@celonis.com", "alt": ""},
+                {"company": "Diligent", "format": "{first}.{last}@diligent.com", "alt": ""},
+                {"company": "HighLevel", "format": "{first}@gohighlevel.com", "alt": ""},
+                {"company": "HighSpot", "format": "{first}.{last}@highspot.com", "alt": ""},
+                {"company": "Ideagen", "format": "{first}.{last}@ideagen.com", "alt": ""},
+                {"company": "Mark43", "format": "{first}.{last}@mark43.com", "alt": ""},
+                {"company": "Pendo", "format": "{first}.{last}@pendo.io", "alt": ""},
+                {"company": "Podium", "format": "{first}.{last}@podium.com", "alt": ""},
+                {"company": "Restaurant365", "format": "{f}{last}@restaurant365.net", "alt": "{f}{last}@restaurant365.com"},
+                {"company": "Traversal", "format": "{first}@traversal.com", "alt": ""},
+                {"company": "YipitData", "format": "{first}.{last}@yipitdata.com", "alt": ""},
+                {"company": "Zendesk", "format": "{first}{last}@zendesk.com", "alt": ""},
+                {"company": "Attain", "format": "{f}{last}@attaindata.io", "alt": ""},
+                {"company": "Front", "format": "{first}.{last}@frontapp.com", "alt": ""},
+                {"company": "GupShup", "format": "{first}@gupshup.io", "alt": ""},
+                {"company": "Gusto", "format": "{first}.{last}@gusto.com", "alt": ""},
+                {"company": "Icertis", "format": "{first}.{last}@icertis.com", "alt": ""},
+                {"company": "Seismic", "format": "{f}{last}@seismic.com", "alt": ""},
+                {"company": "ADP", "format": "{first}.{last}@adp.com", "alt": ""},
+                {"company": "Agorapulse", "format": "{first}@agorapulse.com", "alt": ""},
+                {"company": "Anthology", "format": "{first}.{last}@anthology.com", "alt": ""},
+                {"company": "Asana", "format": "{first}.{last}@asana.com", "alt": ""},
+                {"company": "Blackbaud", "format": "{first}.{last}@blackbaud.com", "alt": ""},
+                {"company": "Guidewire", "format": "{first}.{last}@guidewire.com", "alt": ""},
+                {"company": "Indeed", "format": "{first}.{last}@indeed.com", "alt": ""},
+                {"company": "Klaviyo", "format": "{first}.{last}@klaviyo.com", "alt": ""},
+                {"company": "Paylocity", "format": "{first}.{last}@paylocity.com", "alt": ""},
+                {"company": "Paycom", "format": "{first}.{last}@paycom.com", "alt": ""},
+                {"company": "The Trade Desk", "format": "{first}.{last}@thetradedesk.com", "alt": ""},
+                {"company": "UiPath", "format": "{first}.{last}@uipath.com", "alt": ""},
+                {"company": "Veeva", "format": "{first}.{last}@veeva.com", "alt": ""},
+                {"company": "BlackLine", "format": "{first}.{last}@blackline.com", "alt": ""},
+                {"company": "Cornerstone", "format": "{first}.{last}@csod.com", "alt": ""},
+                {"company": "Domo", "format": "{first}.{last}@domo.com", "alt": ""},
+                {"company": "Tableau", "format": "{first}.{last}@tableau.com", "alt": ""},
+                {"company": "Qlik", "format": "{first}.{last}@qlik.com", "alt": ""},
+                {"company": "Alteryx", "format": "{first}.{last}@alteryx.com", "alt": ""},
+                {"company": "Kiteworks", "format": "{first}.{last}@kiteworks.com", "alt": ""},
+                {"company": "PerformYard", "format": "{first}.{last}@performyard.com", "alt": ""},
+                {"company": "Hive", "format": "{first}@hive.com", "alt": ""},
+                {"company": "Nasuni", "format": "{first}.{last}@nasuni.com", "alt": ""},
+                {"company": "Instantly", "format": "{first}@instantly.ai", "alt": ""},
+                {"company": "Supademo", "format": "{first}@supademo.com", "alt": ""},
+                {"company": "AppLovin", "format": "{first}.{last}@applovin.com", "alt": ""},
+                {"company": "Arcana Network", "format": "{first}@arcana.io", "alt": ""},
+                {"company": "Arcana", "format": "{first}@arcana.io", "alt": ""},
+
+                // Fintech
+                {"company": "Stripe", "format": "{f}{last}@stripe.com", "alt": "{first}@stripe.com"},
+                {"company": "Plaid", "format": "{first}.{last}@plaid.com", "alt": ""},
+                {"company": "Ramp", "format": "{first}.{last}@ramp.com", "alt": "{first}@ramp.com"},
+                {"company": "Brex", "format": "{first}.{last}@brex.com", "alt": ""},
+                {"company": "Deel", "format": "{first}.{last}@deel.com", "alt": ""},
+                {"company": "Navan", "format": "{first}.{last}@navan.com", "alt": ""},
+                {"company": "TripActions", "format": "{first}.{last}@navan.com", "alt": ""},
+                {"company": "Bolt", "format": "{first}.{last}@bolt.com", "alt": ""},
+                {"company": "Carta", "format": "{first}.{last}@carta.com", "alt": ""},
+                {"company": "Tipalti", "format": "{first}.{last}@tipalti.com", "alt": ""},
+                {"company": "FloQast", "format": "{first}.{last}@floqast.com", "alt": ""},
+                {"company": "Intuit", "format": "{first}_{last}@intuit.com", "alt": ""},
+
+                // Legacy / Big Tech
+                {"company": "Amazon", "format": "{last}{f}@amazon.com", "alt": "{f}{last}@amazon.com"},
+                {"company": "Microsoft", "format": "{first}.{last}@microsoft.com", "alt": ""},
+                {"company": "Google", "format": "{first}{last}@google.com", "alt": "{first}.{last}@google.com"},
+                {"company": "Apple", "format": "{f}{last}@apple.com", "alt": "{first}_{last}@apple.com"},
+                {"company": "Meta", "format": "{first}{last}@meta.com", "alt": "{f}{last}@fb.com"},
+                {"company": "Facebook", "format": "{first}{last}@meta.com", "alt": "{f}{last}@fb.com"},
+                {"company": "Oracle", "format": "{first}.{last}@oracle.com", "alt": ""},
+                {"company": "Cisco", "format": "{f}{last}@cisco.com", "alt": ""},
+                {"company": "Intel", "format": "{first}.{last}@intel.com", "alt": ""},
+                {"company": "IBM", "format": "{first}.{last}@ibm.com", "alt": "{first}.{last}@us.ibm.com"},
+                {"company": "Nvidia", "format": "{f}{last}@nvidia.com", "alt": ""},
+                {"company": "Tesla", "format": "{f}{last}@tesla.com", "alt": "{first}@tesla.com"},
+                {"company": "Netflix", "format": "{f}{last}@netflix.com", "alt": ""},
+                {"company": "Topicus", "format": "{first}.{last}@topicus.nl", "alt": ""},
+                {"company": "EPAM Systems", "format": "{first}_{last}@epam.com", "alt": ""},
+                {"company": "EPAM", "format": "{first}_{last}@epam.com", "alt": ""},
+                {"company": "Nemetschek", "format": "{f}{last}@nemetschek.com", "alt": ""},
+                {"company": "WiseTech Global", "format": "{f}{last}@wisetechglobal.com", "alt": ""},
+                {"company": "WiseTech", "format": "{f}{last}@wisetechglobal.com", "alt": ""},
+                {"company": "Alibaba Cloud", "format": "{first}.{last}@alibabacloud.com", "alt": ""},
+                {"company": "Alibaba", "format": "{first}.{last}@alibabacloud.com", "alt": ""},
+                {"company": "Amdocs", "format": "{first}.{last}@amdocs.com", "alt": ""},
+                {"company": "Baidu", "format": "{first}{last}@baidu.com", "alt": ""},
+                {"company": "Bentley Systems", "format": "{first}.{last}@bentley.com", "alt": ""},
+                {"company": "Bentley", "format": "{first}.{last}@bentley.com", "alt": ""},
+                {"company": "Mobileye", "format": "{first}.{last}@mobileye.com", "alt": ""},
+                {"company": "OpenText", "format": "{f}{last}@opentext.com", "alt": ""},
+                {"company": "Tencent", "format": "{first}{last}@tencent.com", "alt": ""},
+                {"company": "Xero", "format": "{first}.{last}@xero.com", "alt": ""},
+                {"company": "Akamai", "format": "{first}.{last}@akamai.com", "alt": ""},
+                {"company": "Gen Digital", "format": "{first}.{last}@gendigital.com", "alt": ""},
+                {"company": "Synopsys", "format": "{first}.{last}@synopsys.com", "alt": ""},
+                {"company": "Cadence", "format": "{first}.{last}@cadence.com", "alt": ""},
+                {"company": "SS&C", "format": "{first}.{last}@sscinc.com", "alt": ""},
+
+                // Finance (from original)
+                {"company": "Goldman Sachs", "format": "{first}.{last}@gs.com", "alt": ""},
+                {"company": "Morgan Stanley", "format": "{first}.{last}@morganstanley.com", "alt": ""},
+                {"company": "J.P. Morgan", "format": "{first}.{last}@jpmorgan.com", "alt": ""},
+                {"company": "JPMorgan", "format": "{first}.{last}@jpmorgan.com", "alt": ""},
+                {"company": "Bank of America", "format": "{first}.{last}@bofa.com", "alt": ""},
+                {"company": "BofA", "format": "{first}.{last}@bofa.com", "alt": ""},
+                {"company": "Citi", "format": "{first}.{last}@citi.com", "alt": ""},
+                {"company": "Citigroup", "format": "{first}.{last}@citi.com", "alt": ""},
+                {"company": "Barclays", "format": "{first}.{last}@barclays.com", "alt": ""},
+                {"company": "UBS", "format": "{first}.{last}@ubs.com", "alt": ""},
+                {"company": "Deutsche Bank", "format": "{first}.{last}@db.com", "alt": ""},
+                {"company": "Evercore", "format": "{first}.{last}@evercore.com", "alt": ""},
+                {"company": "Centerview", "format": "{f}{last}@centerview.com", "alt": ""},
+                {"company": "Centerview Partners", "format": "{f}{last}@centerview.com", "alt": ""},
+                {"company": "Lazard", "format": "{first}.{last}@lazard.com", "alt": ""},
+                {"company": "PJT Partners", "format": "{first}.{last}@pjtpartners.com", "alt": ""},
+                {"company": "Moelis & Co", "format": "{first}.{last}@moelis.com", "alt": ""},
+                {"company": "Moelis", "format": "{first}.{last}@moelis.com", "alt": ""},
+                {"company": "Qatalyst Partners", "format": "{first}.{last}@qatalyst.com", "alt": ""},
+                {"company": "Qatalyst", "format": "{first}.{last}@qatalyst.com", "alt": ""},
+                {"company": "Guggenheim", "format": "{first}.{last}@guggenheimpartners.com", "alt": ""},
+                {"company": "Perella Weinberg", "format": "{f}{last}@pwpartners.com", "alt": ""},
+                {"company": "Jefferies", "format": "{f}{last}@jefferies.com", "alt": ""},
+                {"company": "Houlihan Lokey", "format": "{f}{last}@hl.com", "alt": ""},
+                {"company": "William Blair", "format": "{f}{last}@williamblair.com", "alt": ""},
+                {"company": "RBC Capital Markets", "format": "{first}.{last}@rbccm.com", "alt": ""},
+                {"company": "RBC", "format": "{first}.{last}@rbccm.com", "alt": ""},
+                {"company": "BMO Capital Markets", "format": "{first}.{last}@bmo.com", "alt": ""},
+                {"company": "BMO", "format": "{first}.{last}@bmo.com", "alt": ""},
+                {"company": "Piper Sandler", "format": "{first}.{last}@psc.com", "alt": ""},
+                {"company": "Raymond James", "format": "{first}.{last}@raymondjames.com", "alt": ""},
+                {"company": "Rothschild & Co", "format": "{first}.{last}@rothschildandco.com", "alt": ""},
+                {"company": "Rothschild", "format": "{first}.{last}@rothschildandco.com", "alt": ""},
+                {"company": "Stifel", "format": "{last}{f}@stifel.com", "alt": ""},
+                {"company": "Wells Fargo", "format": "{first}.{last}@wellsfargo.com", "alt": ""}
+            ];
 
             try {
                 const experienceParts = profileData.experience.split('\n')[0].split(' at ');
                 if (experienceParts.length < 2) {
                     console.log('Cannot parse company from experience');
                 } else {
-                    const currentCompany = experienceParts[1].split('(')[0].trim(); // Extract company and remove duration
+                    const currentCompany = experienceParts[1].split('(')[0].trim();
 
                     if (currentCompany && currentCompany.length > 0) {
-                        // Find matching company
-                        const companyKey = Object.keys(FINANCE_DOMAINS).find(key =>
-                            currentCompany.toLowerCase().includes(key.toLowerCase()) ||
-                            key.toLowerCase().includes(currentCompany.toLowerCase())
+                        // Find matching company (case-insensitive partial match)
+                        const companyMatch = COMPANY_EMAIL_FORMATS.find(item =>
+                            currentCompany.toLowerCase().includes(item.company.toLowerCase()) ||
+                            item.company.toLowerCase().includes(currentCompany.toLowerCase())
                         );
 
-                        if (companyKey) {
-                            const { domain, format } = FINANCE_DOMAINS[companyKey];
-                            const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.')); // Remove titles like "Mr." if simple split
-                            // Basic name parsing (first last)
+                        if (companyMatch) {
+                            const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.'));
                             if (nameParts.length >= 2) {
                                 const first = nameParts[0].replace(/[^a-z]/g, '');
                                 const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
 
-                                // Validate that we have actual name parts
                                 if (first.length > 0 && last.length > 0) {
-                                    if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}; xxxx`;
-                                    else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}; xxxx`;
-                                    else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}; xxxx`;
+                                    // Generate primary email
+                                    const primaryEmail = parseEmailFormat(companyMatch.format, first, last);
+                                    if (primaryEmail) {
+                                        predictedEmail = `${primaryEmail}; xxxx`;
+                                    }
+
+                                    // Generate alternative email for BCC
+                                    if (companyMatch.alt) {
+                                        const altEmail = parseEmailFormat(companyMatch.alt, first, last);
+                                        if (altEmail) {
+                                            predictedBcc = altEmail;
+                                        }
+                                    }
+
+                                    if (debugMode) {
+                                        console.log('=== EMAIL PREDICTION ===');
+                                        console.log('Company matched:', companyMatch.company);
+                                        console.log('Primary:', predictedEmail);
+                                        console.log('BCC:', predictedBcc);
+                                    }
                                 }
                             }
                         }
@@ -595,7 +944,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
         }
 
         const token = await getAuthToken();
-        const mimeMessage = createMimeMessage(emailDraft.subject, emailDraft.body, predictedEmail);
+        const mimeMessage = createMimeMessage(emailDraft.subject, emailDraft.body, predictedEmail, predictedBcc);
         const draft = await createDraft(token, mimeMessage);
 
         const gmailUrl = `https://mail.google.com/mail/u/0/#drafts?compose=${draft.message.id}`;
@@ -681,12 +1030,16 @@ async function getAuthToken() {
     });
 }
 
-function createMimeMessage(subject, body, toEmail) {
+function createMimeMessage(subject, body, toEmail, bccEmail) {
     const nl = '\r\n';
     let emailContent = [];
 
     if (toEmail) {
         emailContent.push(`To: ${toEmail}`);
+    }
+
+    if (bccEmail) {
+        emailContent.push(`Bcc: ${bccEmail}`);
     }
 
     emailContent.push(`Subject: ${subject}`);
