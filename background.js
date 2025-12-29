@@ -478,7 +478,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                 .replace('{last_initial}', last[0]);
         };
 
-        // Fuzzy company name matcher
+        // Fuzzy company name matcher with strict validation
         const fuzzyMatchCompany = (profileCompany, dbCompany) => {
             const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
             const tokenize = (str) => str.toLowerCase().split(/[\s\-_.,&()]+/).filter(t => t.length > 0);
@@ -489,22 +489,75 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             // Exact match (normalized)
             if (pCompanyNorm === dCompanyNorm) return 100;
 
-            // Contains match
-            if (pCompanyNorm.includes(dCompanyNorm) || dCompanyNorm.includes(pCompanyNorm)) return 90;
+            // Length similarity check - prevent matching vastly different company names
+            const lengthRatio = Math.min(pCompanyNorm.length, dCompanyNorm.length) /
+                               Math.max(pCompanyNorm.length, dCompanyNorm.length);
 
-            // Token-based matching
+            // If lengths are too different (e.g., "Google" vs "Point72"), heavily penalize
+            if (lengthRatio < 0.5) return 0;
+
+            // Levenshtein distance for similarity scoring
+            const levenshtein = (a, b) => {
+                const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+                for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+                for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+
+                for (let j = 1; j <= b.length; j++) {
+                    for (let i = 1; i <= a.length; i++) {
+                        const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+                        matrix[j][i] = Math.min(
+                            matrix[j][i - 1] + 1,
+                            matrix[j - 1][i] + 1,
+                            matrix[j - 1][i - 1] + indicator
+                        );
+                    }
+                }
+                return matrix[b.length][a.length];
+            };
+
+            // Calculate Levenshtein similarity
+            const distance = levenshtein(pCompanyNorm, dCompanyNorm);
+            const maxLen = Math.max(pCompanyNorm.length, dCompanyNorm.length);
+            const levenshteinScore = ((maxLen - distance) / maxLen) * 100;
+
+            // Contains match - but only if it's a meaningful substring (not just 2-3 chars)
+            const containsMatch = (pCompanyNorm.includes(dCompanyNorm) && dCompanyNorm.length >= 4) ||
+                                 (dCompanyNorm.includes(pCompanyNorm) && pCompanyNorm.length >= 4);
+            if (containsMatch) return Math.max(90, levenshteinScore);
+
+            // Token-based matching with stricter criteria
             const pTokens = tokenize(profileCompany);
             const dTokens = tokenize(dbCompany);
 
-            // Check if all db tokens are in profile tokens (handles "J.P. Morgan" vs "JPMorgan")
-            const allDbTokensMatch = dTokens.every(dt => pTokens.some(pt => pt.includes(dt) || dt.includes(pt)));
-            if (allDbTokensMatch && dTokens.length > 0) return 80;
+            // Require meaningful tokens (at least 2 characters)
+            const meaningfulPTokens = pTokens.filter(t => t.length >= 2);
+            const meaningfulDTokens = dTokens.filter(t => t.length >= 2);
 
-            // Check for significant overlap
-            const matchingTokens = dTokens.filter(dt => pTokens.some(pt => pt === dt || pt.includes(dt) || dt.includes(pt)));
-            const overlapScore = (matchingTokens.length / Math.max(dTokens.length, 1)) * 70;
+            if (meaningfulDTokens.length === 0) return levenshteinScore;
 
-            return overlapScore;
+            // Exact token matches only (no partial matches for stricter validation)
+            const exactTokenMatches = meaningfulDTokens.filter(dt =>
+                meaningfulPTokens.some(pt => pt === dt)
+            ).length;
+
+            // Check if all db tokens match exactly (handles "J.P. Morgan" vs "JPMorgan" when normalized)
+            const allDbTokensMatch = meaningfulDTokens.every(dt =>
+                meaningfulPTokens.some(pt => pt === dt || normalize(pt) === normalize(dt))
+            );
+
+            if (allDbTokensMatch && meaningfulDTokens.length > 0) {
+                return Math.max(85, levenshteinScore);
+            }
+
+            // Calculate token overlap score - require at least 60% exact matches
+            const tokenOverlap = exactTokenMatches / meaningfulDTokens.length;
+            if (tokenOverlap < 0.6) return Math.min(levenshteinScore, 50);
+
+            // Penalize if there are mismatched tokens in the database company name
+            const tokenScore = tokenOverlap * 75;
+
+            // Return the best score from Levenshtein or token matching
+            return Math.max(levenshteinScore, tokenScore);
         };
 
         if (profileData.experience && profileData.name) {
@@ -1273,7 +1326,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
                         for (const item of COMPANY_EMAIL_FORMATS) {
                             const score = fuzzyMatchCompany(currentCompany, item.company);
-                            if (score > bestScore && score >= 70) { // Minimum 70% match
+                            if (score > bestScore && score >= 80) { // Minimum 80% match for strict validation
                                 bestScore = score;
                                 bestMatch = item;
                             }
