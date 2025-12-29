@@ -30,6 +30,7 @@
         "*://*.linkedin.com/*"
       ],
       "js": [
+        "utils.js",
         "linkedin-selectors.js",
         "content.js"
       ],
