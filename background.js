@@ -223,27 +223,19 @@ Two things I'm curious about:
       Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / "How's the new gig?" / "Most people I know..." / "Your sequencing suggests..." / Any vague question / Any mention of compensation` : '';
 
         const prompt = `
-      You're a real person (NOT marketer/salesperson) writing a genuine cold email.
+      You're a real person writing a genuine cold email (NOT marketer/salesperson).
 
       CRITICAL RULES:
-      1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
-      2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
-      3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
-      4. BE CONCISE: Don't recite their career history back to them. Reference ONE specific detail max per question.
-         Bad: "Your move to Stanford GSB right after 3+ years at Mayura (plus the stealth build) caught my eye. Most finance-to-product people skip the MBA..."
-         Good: "You chose an MBA between finance and product roles - what drove that?"
-      5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
-      6. STRONG OPENING: First sentence must grab attention with a specific decision/transition, NOT generic observations.
-         Bad: "I saw you work at Stripe and wanted to reach out"
-         Good: "Your decision to leave MBB for a pre-PMF startup caught my eye"
-      7. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "I've been following your work" or "impressed by your career". Just demonstrate it through specific references. No flattery.
-         Bad: "I've been impressed by your career trajectory"
-         Good: "Your pivot from banking to growth equity after 18 months caught my eye"
-      8. QUESTION LENGTH: Keep questions under 25 words. If longer, you're over-explaining. Cut the context, keep the question.
-         Bad: "Your sequencing suggests you valued the GSB network/framework before jumping into AI GTM execution - curious what drove that choice"
-         Good: "What spurred the move to Sequoia at the 2.5 year mark vs staying for VP?"
-      9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
-      10. FORBIDDEN WORDS: Do NOT use the terms "buyside", "sellside", "sell-side", or "buy-side". Use specific industry terms where applicable (e.g. "banking", "investing", "private equity", "advisory"), or just describe the roles naturally.
+      1. NO "Name here -" format. Start: "I'm [Name], [role/context]..."
+      2. Questions need SPECIFIC details (company names, roles, timeframes). NO generic questions.
+      3. Don't assume current state ("swamped", "ramping up") unless factual.
+      4. BE CONCISE: Don't recite career history. Max ONE specific detail per question.
+      5. Use ACTUAL titles from their profile. Don't paraphrase.
+      6. STRONG OPENING: Grab attention with specific decision/transition, not generic observations.
+      7. SHOW research through specifics. Never say "I did research" or "impressed by career". No flattery.
+      8. Questions under 25 words. Cut context, keep question.
+      9. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
+      10. FORBIDDEN: "buyside", "sellside", "sell-side", "buy-side". Use specific terms.
 
       RECIPIENT:
       Name: ${profileData.name}
@@ -251,58 +243,51 @@ Two things I'm curious about:
       ${profileData.location ? `Location: ${profileData.location}` : ''}
       ${profileData.education ? `Education: ${profileData.education}` : ''}
       About: ${profileData.about}
-      Experience (chronological): ${profileData.experience}
+      Experience: ${profileData.experience}
 
-      Analyze FULL career trajectory (patterns, transitions, story arc), not just current role.
+      Analyze FULL career trajectory (patterns, transitions), not just current role.
 
       SENDER: ${userContext || 'Not provided'}
 
-      ${webGroundingContext ? `RECENT NEWS / CONTEXT (use if highly relevant to build connection):
-      ${webGroundingContext}
+      ${webGroundingContext ? `RECENT NEWS: ${webGroundingContext}\n\nUse only if creates genuine connection. NEVER force it.` : ''}
 
-      WEB GROUNDING USAGE: Only mention if it creates a genuine connection point (e.g., "congrats on the raise", "saw portfolio company X", "noticed your recent launch"). NEVER force it if not naturally relevant. Skip entirely if unclear or generic.` : ''}
-
-      CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
+      CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
       ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
-      ${exampleEmail ? `STYLE REF (match vibe): ${exampleEmail}` : ''}
+      ${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
 
-      WARM CONNECTION: If we know each other (mentor/colleague/met before), reconnect naturally. Don't formally intro or explain relationship robotically.
-      Bad: "I was your mentee..." Good: "Been a while since [event]! Hope you've been well."
+      WARM CONNECTION: If known (mentor/colleague/met), reconnect naturally. Don't explain relationship.
 
-      SPARSE PROFILE: If limited data (minimal About, 1-2 experiences), focus on what exists, ask to learn more, keep shorter/open-ended.
+      SPARSE PROFILE: If limited data, focus on what exists, keep shorter.
 
       ${financeInstructions}
 
       ${questionInstructions}
 
       TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-      GOAL: Be concise and curious. Ask about ONE interesting choice from their path. Don't try to impress them with analysis - just ask a genuine question.
+      GOAL: Be concise and curious. Ask about ONE interesting choice. Don't impress with analysis.
 
-      Write like a human (no jargon, natural not robotic).
+      Write like a human (no jargon, natural).
 
       ${financeRecruitingMode ? '' : `CASUAL MODE:
-      1. Use ALL experiences - find pivots/patterns/story arc. DON'T recite their career history - only reference specifics as needed for connection points.
-      2. Short punchy sentences. Conversational but professional (like respected colleague).
-      3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
-      4. STRONG OPENING: First sentence must grab attention with specific decision/transition. NO generic observations like "I saw you work at..."
-      5. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
-         Bad: "I saw you work at Stripe. Interested in fintech."
-         Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
-         Best: "Your decision to leave banking after 3yrs for a pre-PMF startup caught my eye - been at JPM thinking about that same jump."
-      6. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "impressed by your career". Just demonstrate it through specific references. No flattery.
-      7. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
-      8. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine. Adjust for seniority - more formal with senior folks.
-      9. NEVER mention compensation, comp, salary, or money in any context.
-      10. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
-      11. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
+      1. Use ALL experiences - find pivots/patterns. DON'T recite career history.
+      2. Short punchy sentences. Conversational but professional.
+      3. NO "Name here -" format. Start: "I'm [Name], [role/context]..."
+      4. First sentence grabs attention with specific decision/transition.
+      5. Find SPECIFIC connection points (company names, roles, timeframes). Make them want to talk.
+      6. Show research through specifics. No flattery.
+      7. CTA: Quick call. NOT "15-min". NEVER coffee. Acknowledge busy schedule.
+      8. Polite, respectful, genuine. Adjust for seniority.
+      9. NEVER mention compensation/money.
+      10. Don't assume current state. Stick to profile facts.
+      11. Use exact job titles from LinkedIn.
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-      SUBJECT: State YOUR PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about growth equity transition"). NEVER just describe their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"/"[A] to [B] move"`}
+      SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only. Return JSON: {"subject": "...", "body": "..."} (Body MUST NOT include "Hi [Name]").
-      ALMA MATER: Never mention their school unless sender attended SAME one.
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. ASCII only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
+      ALMA MATER: Only mention school if sender attended SAME one.
     `;
 
         // Debug logging for prompt
@@ -321,66 +306,55 @@ Two things I'm curious about:
             }
 
             // Split prompt into cacheable (static instructions) and dynamic (profile data)
-            const staticInstructions = `You're a real person (NOT marketer/salesperson) writing a genuine cold email.
+            const staticInstructions = `You're a real person writing a genuine cold email (NOT marketer/salesperson).
 
 CRITICAL RULES:
-1. BODY FORMAT: Do NOT include "Hi [Name]" or "Dear [Name]" in the JSON body. Start directly with the first sentence.
-2. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
-2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
-3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
-4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
-5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
-6. STRONG OPENING: First sentence must grab attention with a specific decision/transition, NOT generic observations.
-   Bad: "I saw you work at Stripe and wanted to reach out"
-   Good: "Your decision to leave MBB for a pre-PMF startup caught my eye"
-7. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "I've been following your work" or "impressed by your career". Just demonstrate it through specific references. No flattery.
-   Bad: "I've been impressed by your career trajectory"
-   Good: "Your pivot from sell-side to growth equity after only 18 months suggests..."
-8. QUESTION DEPTH: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
-   Bad: "What made you switch to VC?"
-   Good: "You joined Sequoia right when consumer was out of favor (2022) - what made you confident in the timing vs waiting for the cycle?"
-9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
-10. VISUAL STRUCTURE: Keep paragraphs SHORT (2-3 sentences max). Use line breaks to separate ideas. Avoid walls of text.
-11. BE CONCISE: Get to the point. Every sentence must earn its place.
+1. BODY: NO "Hi [Name]" in JSON body. Start with first sentence.
+2. NO "Name here -" format. Start: "I'm [Name], [role/context]..."
+3. Questions need SPECIFIC details (company names, roles, timeframes). NO generic questions.
+4. Don't assume current state ("swamped", "ramping up") unless factual.
+5. BE CONCISE: Don't recite career history. Reference specifics only as needed.
+6. Use ACTUAL titles from profile. Don't paraphrase.
+7. STRONG OPENING: Grab attention with specific decision/transition, not generic observations.
+8. SHOW research through specifics. Never say "I did research" or "impressed by career". No flattery.
+9. Questions reveal deep thought. Show analytical thinking, not surface curiosity.
+10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
+11. Keep paragraphs SHORT (2-3 sentences max). Use line breaks.
 
-CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
+CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
-WARM CONNECTION: If we know each other (mentor/colleague/met before), reconnect naturally. Don't formally intro or explain relationship robotically.
-Bad: "I was your mentee..." Good: "Been a while since [event]! Hope you've been well."
+WARM CONNECTION: If known (mentor/colleague/met), reconnect naturally. Don't explain relationship.
 
-SPARSE PROFILE: If limited data (minimal About, 1-2 experiences), focus on what exists, ask to learn more, keep shorter/open-ended.
+SPARSE PROFILE: If limited data, focus on what exists, keep shorter.
 
 ${financeInstructions}
 
 ${questionInstructions}
 
 TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-GOAL: Make this email SO ENGAGING it's hard to ignore. Find specific points of intersection. Ask questions they're uniquely positioned to answer. Make them think "this person really gets it."
+GOAL: Make email engaging and hard to ignore. Find specific connections. Ask questions they're uniquely positioned to answer.
 
-Write like a human (no jargon, natural not robotic).
+Write like a human (no jargon, natural).
 
 ${financeRecruitingMode ? '' : `CASUAL MODE:
-1. Use ALL experiences - find pivots/patterns/story arc. DON'T recite their career history - only reference specifics as needed for connection points.
-2. Short punchy sentences. Conversational but professional (like respected colleague).
-3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
-4. STRONG OPENING: First sentence must grab attention with specific decision/transition. NO generic observations like "I saw you work at..."
-5. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
-   Bad: "I saw you work at Stripe. Interested in fintech."
-   Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
-   Best: "Your decision to leave banking after 3yrs for a pre-PMF startup caught my eye - been at JPM thinking about that same jump."
-6. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "impressed by your career". Just demonstrate it through specific references. No flattery.
-7. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
-8. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine. Adjust for seniority - more formal with senior folks.
-9. NEVER mention compensation, comp, salary, or money in any context.
-10. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
-11. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
+1. Use ALL experiences - find pivots/patterns. DON'T recite career history.
+2. Short punchy sentences. Conversational but professional.
+3. NO "Name here -" format. Start: "I'm [Name], [role/context]..."
+4. First sentence grabs attention with specific decision/transition.
+5. Find SPECIFIC connection points (company names, roles, timeframes). Make them want to talk.
+6. Show research through specifics. No flattery.
+7. CTA: Quick call. NOT "15-min". NEVER coffee. Acknowledge busy schedule.
+8. Polite, respectful, genuine. Adjust for seniority.
+9. NEVER mention compensation/money.
+10. Don't assume current state. Stick to profile facts.
+11. Use exact job titles from LinkedIn.
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-SUBJECT: State YOUR PURPOSE for reaching out (e.g., "Advice on moving from banking to operating", "Question about growth equity transition"). NEVER just describe their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"/"[A] to [B] move"`}
+SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
-ALMA MATER: Never mention their school unless sender attended SAME one.`;
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. ASCII only. JSON: {"subject": "...", "body": "..."}
+ALMA MATER: Only mention school if sender attended SAME one.`;
 
             const dynamicContent = `RECIPIENT:
 Name: ${profileData.name}
@@ -388,20 +362,17 @@ Headline: ${profileData.headline}
 ${profileData.location ? `Location: ${profileData.location}` : ''}
 ${profileData.education ? `Education: ${profileData.education}` : ''}
 About: ${profileData.about}
-Experience (chronological): ${profileData.experience}
+Experience: ${profileData.experience}
 
-Analyze FULL career trajectory (patterns, transitions, story arc), not just current role.
+Analyze FULL career trajectory (patterns, transitions), not just current role.
 
 SENDER: ${userContext || 'Not provided'}
 
-${webGroundingContext ? `RECENT NEWS / CONTEXT (use if highly relevant to build connection):
-${webGroundingContext}
-
-WEB GROUNDING USAGE: Only mention if it creates a genuine connection point (e.g., "congrats on the raise", "saw portfolio company X", "noticed your recent launch"). NEVER force it if not naturally relevant. Skip entirely if unclear or generic.` : ''}
+${webGroundingContext ? `RECENT NEWS: ${webGroundingContext}\n\nUse only if creates genuine connection. NEVER force it.` : ''}
 
 ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
-${exampleEmail ? `STYLE REF (match vibe): ${exampleEmail}` : ''}
-${cachedPattern ? `\n\nSUCCESSFUL PATTERN (for similar ${cachedPattern.role} at ${cachedPattern.company}):\nSubject: ${cachedPattern.subject}\nBody structure (adapt, don't copy): ${cachedPattern.body.substring(0, 200)}...` : ''}`;
+${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
+${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPattern.company}):\nSubject: ${cachedPattern.subject}\nBody (adapt, don't copy): ${cachedPattern.body.substring(0, 200)}...` : ''}`;
 
             const response = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
