@@ -170,9 +170,11 @@ Two things I'm curious about:
       - Use multiple specific details (roles, transitions, career trajectory)
       - Analyze patterns/pivots across their full career arc
       - Connect YOUR background to THEIRS analytically
+      - STRONG OPENING: First sentence must grab attention with specific decision/transition. NO generic observations.
       - No fluff like "I came across your profile..." - jump to specific connection
+      - SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "impressed by your career". Just demonstrate it through specifics. No flattery.
       - DON'T recite their career history - only reference specifics as needed for connection
-      - Ex: "Your move from [Company A] to [Company B] suggests you prioritized [X]. I'm building [X] at..."
+      - Ex: "Your move from [Company A] to [Company B] after only [X months] suggests you prioritized [Y]. I'm wrestling with similar decision..."
 
       STRUCTURE:
       1. Intro: Casual introduction with name, role, background (1 sentence). CRITICAL: ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -", "John here -", etc.). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
@@ -187,10 +189,12 @@ Two things I'm curious about:
       - These questions are CRITICAL - they make your email engaging and hard to ignore
       - MUST reference SPECIFIC details: actual company names, specific role transitions, specific timeframes from their experience
       - FORBIDDEN: Generic questions that could apply to anyone. Questions MUST be rooted in their specific career arc
+      - DEPTH MATTERS: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
       - Ask about decisions/trade-offs using their ACTUAL experiences, NOT "what is it like"
       - Focus on CAREER and WORK decisions - NEVER mention compensation, comp, salary, or money
       - AVOID ASSUMPTIONS: Don't assume they're "ramping up" or "getting up to speed" unless they just started (<3 months). Check tenure carefully.
-      Good: "Your move from Goldman Sachs IB to Sequoia (after 2.5 years) - what made you confident enough to jump then vs staying for VP?" / "You went consumer tech (Duolingo) after 3 years in VC - what changed your thesis on operating vs investing?"
+      - SENIORITY: Don't ask basic questions of senior people (MDs/Partners/VPs) - they expect depth and analytical thinking.
+      Good: "Your move from Goldman Sachs IB to Sequoia (after 2.5 years) - what made you confident enough to jump then vs staying for VP?" / "You joined consumer VC right when the category was out of favor - what made you confident in the timing vs waiting for the cycle?"
       Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?" / "How's the new role going?" / Any vague question / Any mention of compensation/money` : ''}
       TIMING & PRECISION: Don't say "recently started/joined" unless <3 months ago. NEVER make assumptions about their current state (e.g., "swamped getting up to speed", "settling in", "ramping up") - you don't know this. Stick to facts from their profile.
       TONE: Always polite, respectful, and non-offensive. Never pushy or entitled.
@@ -203,12 +207,14 @@ Two things I'm curious about:
       - CRITICAL: Questions make your email engaging and hard to ignore
       - MUST reference SPECIFIC details: actual company names, specific role transitions, specific timeframes from their experience
       - FORBIDDEN: Generic questions that could apply to anyone. Questions MUST be rooted in their specific career arc
+      - DEPTH MATTERS: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
       - Ask about decisions/trade-offs using their ACTUAL experiences, NOT "what is it like"
       - Focus on CAREER and WORK - NEVER mention compensation, comp, salary, or money
       - AVOID ASSUMPTIONS: Don't assume their current state (e.g., "ramping up", "settling in") unless they just started (<3 months)
+      - SENIORITY: Don't ask basic questions of senior people (MDs/Partners/VPs) - they expect depth and analytical thinking.
       - Be concise, specific to THEIR journey. Skip if no highly pertinent question.
       ${questionFormattingRules}
-      Good: "Your move from Stripe to 20-person startup (after 4 years) - how did you think about stability vs ownership?" / "You went from PM to founder - what convinced you the timing was right?"
+      Good: "Your move from Stripe to 20-person startup (after 4 years) - how did you think about stability vs ownership?" / "You joined consumer VC right when the category was out of favor - what made you confident in the timing?"
       Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / "How's the new gig?" / Any vague question / Any mention of compensation` : '';
 
         const prompt = `
@@ -220,6 +226,16 @@ Two things I'm curious about:
       3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
       4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
       5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
+      6. STRONG OPENING: First sentence must grab attention with a specific decision/transition, NOT generic observations.
+         Bad: "I saw you work at Stripe and wanted to reach out"
+         Good: "Your decision to leave MBB for a pre-PMF startup caught my eye"
+      7. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "I've been following your work" or "impressed by your career". Just demonstrate it through specific references. No flattery.
+         Bad: "I've been impressed by your career trajectory"
+         Good: "Your pivot from sell-side to growth equity after only 18 months suggests..."
+      8. QUESTION DEPTH: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
+         Bad: "What made you switch to VC?"
+         Good: "You joined Sequoia right when consumer was out of favor (2022) - what made you confident in the timing vs waiting for the cycle?"
+      9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
 
       RECIPIENT:
       Name: ${profileData.name}
@@ -261,15 +277,17 @@ Two things I'm curious about:
       1. Use ALL experiences - find pivots/patterns/story arc. DON'T recite their career history - only reference specifics as needed for connection points.
       2. Short punchy sentences. Conversational but professional (like respected colleague).
       3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
-      4. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
+      4. STRONG OPENING: First sentence must grab attention with specific decision/transition. NO generic observations like "I saw you work at..."
+      5. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
          Bad: "I saw you work at Stripe. Interested in fintech."
          Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
-         Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
-      5. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
-      6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
-      7. NEVER mention compensation, comp, salary, or money in any context.
-      8. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
-      9. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
+         Best: "Your decision to leave banking after 3yrs for a pre-PMF startup caught my eye - been at JPM thinking about that same jump."
+      6. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "impressed by your career". Just demonstrate it through specific references. No flattery.
+      7. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
+      8. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine. Adjust for seniority - more formal with senior folks.
+      9. NEVER mention compensation, comp, salary, or money in any context.
+      10. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
+      11. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
@@ -303,6 +321,16 @@ CRITICAL RULES:
 3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
 4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
 5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
+6. STRONG OPENING: First sentence must grab attention with a specific decision/transition, NOT generic observations.
+   Bad: "I saw you work at Stripe and wanted to reach out"
+   Good: "Your decision to leave MBB for a pre-PMF startup caught my eye"
+7. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "I've been following your work" or "impressed by your career". Just demonstrate it through specific references. No flattery.
+   Bad: "I've been impressed by your career trajectory"
+   Good: "Your pivot from sell-side to growth equity after only 18 months suggests..."
+8. QUESTION DEPTH: Questions should reveal you've thought deeply about their decisions. Show analytical thinking, not surface-level curiosity.
+   Bad: "What made you switch to VC?"
+   Good: "You joined Sequoia right when consumer was out of favor (2022) - what made you confident in the timing vs waiting for the cycle?"
+9. SENIORITY AWARENESS: Adjust tone for seniority. Don't be too casual with MDs/Partners/VPs. Don't ask basic questions of senior people - they expect depth.
 
 CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
@@ -324,15 +352,17 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 1. Use ALL experiences - find pivots/patterns/story arc. DON'T recite their career history - only reference specifics as needed for connection points.
 2. Short punchy sentences. Conversational but professional (like respected colleague).
 3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
-4. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
+4. STRONG OPENING: First sentence must grab attention with specific decision/transition. NO generic observations like "I saw you work at..."
+5. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
    Bad: "I saw you work at Stripe. Interested in fintech."
    Better: "Your move from Goldman to Series A caught my eye - wrestling with similar decision."
-   Best: "Your banking to startup transition resonated. Been at JPM 3yrs, thinking about mission-driven work. How did you approach that decision?"
-5. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
-6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
-7. NEVER mention compensation, comp, salary, or money in any context.
-8. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
-9. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
+   Best: "Your decision to leave banking after 3yrs for a pre-PMF startup caught my eye - been at JPM thinking about that same jump."
+6. SHOW RESEARCH, DON'T TELL: Never say "I did my research" or "impressed by your career". Just demonstrate it through specific references. No flattery.
+7. CTA: Ask for a quick call. Say "quick call" NOT "15-min call" or specific durations. NEVER offer coffee. Acknowledge busy schedule.
+8. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine. Adjust for seniority - more formal with senior folks.
+9. NEVER mention compensation, comp, salary, or money in any context.
+10. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
+11. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
