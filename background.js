@@ -636,12 +636,12 @@ async function getAuthToken() {
         chrome.identity.launchWebAuthFlow(
             { url: authUrl, interactive: true },
             async (responseUrl) => {
-                // Hide OAuth notification
+                // Hide OAuth notification on all LinkedIn tabs
                 try {
-                    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (tabs[0]) {
-                        chrome.tabs.sendMessage(tabs[0].id, { action: 'hideOAuthNotification' }).catch(() => {});
-                    }
+                    const tabs = await chrome.tabs.query({ url: '*://*.linkedin.com/*' });
+                    tabs.forEach(tab => {
+                        chrome.tabs.sendMessage(tab.id, { action: 'hideOAuthNotification' }).catch(() => {});
+                    });
                 } catch (e) {
                     console.log('Could not hide OAuth notification:', e);
                 }
