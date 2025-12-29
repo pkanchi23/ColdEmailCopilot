@@ -100,8 +100,46 @@ const setupModelSelect = () => {
   });
 };
 
+const setupHelperModal = () => {
+  const modal = document.getElementById('setupModal');
+  const btn = document.getElementById('openSetupHelper');
+  const span = document.getElementsByClassName('close')[0];
+  const copyBtn = document.getElementById('copyPrompt');
+  const promptText = document.getElementById('systemPrompt');
+
+  btn.onclick = function (e) {
+    e.preventDefault();
+    modal.style.display = 'block';
+  }
+
+  span.onclick = function () {
+    modal.style.display = 'none';
+  }
+
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  copyBtn.onclick = function () {
+    promptText.select();
+    promptText.setSelectionRange(0, 99999); // For mobile devices
+    navigator.clipboard.writeText(promptText.value).then(() => {
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      copyBtn.style.backgroundColor = '#059669';
+      setTimeout(() => {
+        copyBtn.textContent = originalText;
+        copyBtn.style.backgroundColor = '#10b981';
+      }, 2000);
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   setupModelSelect();
+  setupHelperModal();
 });
 document.getElementById('save').addEventListener('click', saveOptions);

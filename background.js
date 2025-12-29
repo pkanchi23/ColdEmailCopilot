@@ -265,8 +265,16 @@ async function handleGenerateDraft(requestData) {
 
         let emailDraft;
         try {
-            emailDraft = JSON.parse(content);
+            // Remove markdown code blocks if present (common with Claude)
+            let cleanContent = content.trim();
+            if (cleanContent.startsWith('```json')) {
+                cleanContent = cleanContent.replace(/^```json/, '').replace(/```$/, '');
+            } else if (cleanContent.startsWith('```')) {
+                cleanContent = cleanContent.replace(/^```/, '').replace(/```$/, '');
+            }
+            emailDraft = JSON.parse(cleanContent);
         } catch (e) {
+            console.warn('JSON parsing failed, using raw content:', e);
             emailDraft = { subject: "Intro", body: content };
         }
 
