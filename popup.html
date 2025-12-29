@@ -136,6 +136,7 @@
     <div class="tabs">
         <button class="tab active" data-view="draft">Draft Email</button>
         <button class="tab" data-view="saved">Saved List</button>
+        <button class="tab" data-view="templates">Templates</button>
     </div>
 
     <!-- Draft View -->
@@ -171,6 +172,20 @@
         </div>
         <div id="emptyState" style="color: #6b7280; font-size: 13px; margin-top: 20px;">
             No profiles saved yet.<br>Click "Save" on a LinkedIn profile.
+        </div>
+    </div>
+
+    <!-- Templates View -->
+    <div id="templates" class="view">
+        <button id="saveTemplateBtn" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+            + Save Last Generated Email as Template
+        </button>
+
+        <div id="templateList">
+            <!-- Templates injected here -->
+        </div>
+        <div id="templatesEmptyState" style="color: #6b7280; font-size: 13px; margin-top: 20px;">
+            No templates yet.<br>Generate an email and save it as a template.
         </div>
     </div>
 

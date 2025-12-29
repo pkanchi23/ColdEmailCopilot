@@ -24,6 +24,8 @@ tabs.forEach(tab => {
 
         if (tab.dataset.view === 'saved') {
             loadSavedProfiles();
+        } else if (tab.dataset.view === 'templates') {
+            loadTemplates();
         }
     });
 });
@@ -192,6 +194,91 @@ document.getElementById('importFile')?.addEventListener('change', async (e) => {
 
     // Reset file input
     e.target.value = '';
+});
+
+// --- Template Library ---
+const loadTemplates = async () => {
+    const { emailTemplates = [] } = await chrome.storage.local.get('emailTemplates');
+    const container = document.getElementById('templateList');
+    const emptyState = document.getElementById('templatesEmptyState');
+
+    container.innerHTML = '';
+
+    if (emailTemplates.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    // Show most recent first
+    emailTemplates.slice().reverse().forEach((template, index) => {
+        const div = document.createElement('div');
+        div.className = 'saved-item';
+        div.innerHTML = `
+            <div class="saved-name">${template.name}</div>
+            <div class="saved-headline" style="font-size: 11px; margin-bottom: 4px;">
+                Subject: ${template.subject}
+            </div>
+            <div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px;">
+                ${template.category || 'General'} • Saved ${new Date(template.createdAt).toLocaleDateString()}
+            </div>
+            <div class="saved-actions">
+                <button class="use-template-btn" style="background: #2563eb; color: white;">Use Template</button>
+                <button class="view-template-btn" style="background: #6b7280; color: white;">View</button>
+                <button class="delete-template-btn" style="background: #fee2e2; color: #991b1b;">Delete</button>
+            </div>
+        `;
+
+        div.querySelector('.use-template-btn').addEventListener('click', async () => {
+            await chrome.storage.local.set({ activeTemplate: template });
+            alert(`Template "${template.name}" will be used for next generation`);
+        });
+
+        div.querySelector('.view-template-btn').addEventListener('click', () => {
+            alert(`Subject: ${template.subject}\n\nBody:\n${template.body}`);
+        });
+
+        div.querySelector('.delete-template-btn').addEventListener('click', async () => {
+            const { emailTemplates } = await chrome.storage.local.get('emailTemplates');
+            emailTemplates.splice(emailTemplates.length - 1 - index, 1);
+            await chrome.storage.local.set({ emailTemplates });
+            loadTemplates();
+        });
+
+        container.appendChild(div);
+    });
+};
+
+// Save last generated email as template
+document.getElementById('saveTemplateBtn')?.addEventListener('click', async () => {
+    const { lastGeneratedEmail } = await chrome.storage.local.get('lastGeneratedEmail');
+
+    if (!lastGeneratedEmail) {
+        alert('No email has been generated yet. Generate an email first!');
+        return;
+    }
+
+    const name = prompt('Enter a name for this template:', 'My Template');
+    if (!name) return;
+
+    const category = prompt('Category (optional):', 'General') || 'General';
+
+    const template = {
+        id: Date.now(),
+        name,
+        category,
+        subject: lastGeneratedEmail.subject,
+        body: lastGeneratedEmail.body,
+        createdAt: new Date().toISOString()
+    };
+
+    const { emailTemplates = [] } = await chrome.storage.local.get('emailTemplates');
+    emailTemplates.push(template);
+    await chrome.storage.local.set({ emailTemplates });
+
+    alert('Template saved successfully!');
+    loadTemplates();
 });
 
 
