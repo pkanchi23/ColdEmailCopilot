@@ -171,6 +171,7 @@ Two things I'm curious about:
       - Analyze patterns/pivots across their full career arc
       - Connect YOUR background to THEIRS analytically
       - No fluff like "I came across your profile..." - jump to specific connection
+      - DON'T recite their career history - only reference specifics as needed for connection
       - Ex: "Your move from [Company A] to [Company B] suggests you prioritized [X]. I'm building [X] at..."
 
       STRUCTURE:
@@ -217,6 +218,8 @@ Two things I'm curious about:
       1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
       2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
       3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
+      4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
+      5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
 
       RECIPIENT:
       Name: ${profileData.name}
@@ -255,7 +258,7 @@ Two things I'm curious about:
       Write like a human (no jargon, natural not robotic).
 
       ${financeRecruitingMode ? '' : `CASUAL MODE:
-      1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
+      1. Use ALL experiences - find pivots/patterns/story arc. DON'T recite their career history - only reference specifics as needed for connection points.
       2. Short punchy sentences. Conversational but professional (like respected colleague).
       3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
       4. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
@@ -266,6 +269,7 @@ Two things I'm curious about:
       6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
       7. NEVER mention compensation, comp, salary, or money in any context.
       8. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
+      9. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
@@ -297,6 +301,8 @@ CRITICAL RULES:
 1. ABSOLUTELY NO "Name here -" format (e.g., "Pranav here -"). Start like: "I'm [Name], [role/context]..."
 2. Questions MUST use SPECIFIC details (actual company names, roles, timeframes) from their profile. FORBIDDEN: generic questions.
 3. NO FALSE PRECISION: Don't assume their current state ("swamped", "ramping up") unless factual. Check tenure.
+4. BE CONCISE: Don't recite their career history back to them. Only reference specific details as needed for context/connection points.
+5. TITLE ACCURACY: Use their ACTUAL title/role from their LinkedIn profile. Don't make up or paraphrase job titles.
 
 CTA RULE: ALWAYS ask for a quick call. NEVER offer coffee. Say "quick call" not "15-min call" or specific durations.
 
@@ -315,7 +321,7 @@ GOAL: Make this email SO ENGAGING it's hard to ignore. Find specific points of i
 Write like a human (no jargon, natural not robotic).
 
 ${financeRecruitingMode ? '' : `CASUAL MODE:
-1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions, but don't over-index on career moves alone.
+1. Use ALL experiences - find pivots/patterns/story arc. DON'T recite their career history - only reference specifics as needed for connection points.
 2. Short punchy sentences. Conversational but professional (like respected colleague).
 3. CRITICAL: ABSOLUTELY NO "Name here -" introduction format (e.g., "Pranav here -", "John here -"). This is FORBIDDEN. Start directly like: "I'm [Name], [role/context]..."
 4. CRITICAL - Find SPECIFIC points of intersection using ACTUAL details from their profile (company names, roles, timeframes): What makes them WANT to talk with you? Find shared struggles, career tensions, deep connection (YOUR journey with THEIR journey). Mutual curiosity, not sales. Make it engaging and hard to ignore.
@@ -326,6 +332,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 6. TONE: Always polite, respectful, and non-offensive. Never pushy or entitled. Thoughtful and genuine.
 7. NEVER mention compensation, comp, salary, or money in any context.
 8. AVOID FALSE PRECISION: Don't make assumptions about their current state (e.g., "swamped getting up to speed", "settling in"). Stick to facts from their profile.
+9. USE ACTUAL TITLES: Reference their exact job titles from LinkedIn. Don't paraphrase or make up titles.
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
@@ -487,9 +494,9 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (for similar ${cachedPattern.role} at 
                         const first = nameParts[0].replace(/[^a-z]/g, '');
                         const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
 
-                        if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}xxxx`;
-                        else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}xxxx`;
-                        else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}xxxx`;
+                        if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}; xxxx`;
+                        else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}; xxxx`;
+                        else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}; xxxx`;
                     }
                 }
             }
