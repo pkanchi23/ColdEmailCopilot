@@ -9,6 +9,7 @@ const saveOptions = () => {
   const tone = document.getElementById('tone').value;
   const exampleEmail = document.getElementById('exampleEmail').value;
   const financeRecruitingMode = document.getElementById('financeRecruitingMode').checked;
+  const debugMode = document.getElementById('debugMode').checked;
 
   if (!apiKey && !anthropicApiKey) {
     showStatus('Please enter at least one API Key.', 'error');
@@ -28,7 +29,8 @@ const saveOptions = () => {
       model: model,
       tone: tone,
       exampleEmail: exampleEmail,
-      financeRecruitingMode: financeRecruitingMode
+      financeRecruitingMode: financeRecruitingMode,
+      debugMode: debugMode
     },
     () => {
       showStatus('Settings saved successfully!', 'success');
@@ -47,7 +49,8 @@ const restoreOptions = () => {
       model: 'gpt-5.2',
       tone: 'Casual & Friendly',
       exampleEmail: '',
-      financeRecruitingMode: false
+      financeRecruitingMode: false,
+      debugMode: false
     },
     (items) => {
       document.getElementById('apiKey').value = items.openAiApiKey;
@@ -58,6 +61,7 @@ const restoreOptions = () => {
       document.getElementById('tone').value = items.tone;
       document.getElementById('exampleEmail').value = items.exampleEmail;
       document.getElementById('financeRecruitingMode').checked = items.financeRecruitingMode;
+      document.getElementById('debugMode').checked = items.debugMode;
 
       // Check if saved model is in the dropdown
       const modelSelect = document.getElementById('model');

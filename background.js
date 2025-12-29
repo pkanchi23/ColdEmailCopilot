@@ -26,197 +26,164 @@ async function handleGenerateDraft(requestData) {
             model = 'gpt-5.2',
             tone = 'Casual & Friendly',
             exampleEmail,
-            financeRecruitingMode = false
-        } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode']);
+            financeRecruitingMode = false,
+            debugMode = false
+        } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
 
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
         if (!openAiApiKey && !anthropicApiKey) {
             throw new Error('No API Key found. Please set at least one key in extension options.');
         }
+
+        // Debug mode logging
+        if (debugMode) {
+            console.log('=== DEBUG MODE ===');
+            console.log('Profile Data:', profileData);
+            console.log('Sender Name:', finalSenderName);
+            console.log('User Context:', userContext);
+            console.log('Model:', model);
+            console.log('Tone:', tone);
+            console.log('Finance Mode:', financeRecruitingMode);
+        }
+
         // Extract first name for signature
         const firstName = finalSenderName.split(' ')[0];
 
+        // Smart caching: Check for similar company+role pattern
+        let cachedPattern = null;
+        const extractCompanyRoleForLookup = (experience) => {
+            if (!experience) return null;
+            const firstLine = experience.split('\n')[0];
+            const match = firstLine.match(/^(.+?)\s+at\s+(.+?)(?:\s+\(|$)/);
+            if (match) {
+                return {
+                    role: match[1].trim(),
+                    company: match[2].trim()
+                };
+            }
+            return null;
+        };
+
+        const currentCompanyRole = extractCompanyRoleForLookup(profileData.experience);
+        if (currentCompanyRole) {
+            const cacheKey = `email_cache_${currentCompanyRole.company}_${currentCompanyRole.role}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+            const { emailPatternCache = {} } = await chrome.storage.local.get('emailPatternCache');
+
+            if (emailPatternCache[cacheKey] && emailPatternCache[cacheKey].expiresAt > Date.now()) {
+                cachedPattern = emailPatternCache[cacheKey];
+                if (debugMode) {
+                    console.log('=== CACHED PATTERN FOUND ===');
+                    console.log('Company:', cachedPattern.company);
+                    console.log('Role:', cachedPattern.role);
+                    console.log('Cached Subject:', cachedPattern.subject);
+                }
+            }
+        }
+
+        // Shared question formatting rules (used by both modes)
+        const questionFormattingRules = `QUESTION FORMAT: Compact numbered list (1. Question... 2. Question...) with no blank lines between.`;
+
         // Build Finance Recruiting specific instructions
         const financeInstructions = financeRecruitingMode ? `
-      FINANCE RECRUITING MODE - FORMAL NETWORKING EMAIL:
-      
-      THE GOAL: Write an email SO thoughtful and insightful that the recipient feels almost COMPELLED to respond. They should think: "This person really did their homework. I want to talk to them."
-      
-      This email must be CONCISE but THOUGHTFUL (100-150 words). Be respectful of their time.
-      
-      BE EXTREMELY ANALYTICAL & THOUGHTFUL:
-      - **MAXIMIZE PROFILE USAGE**: You MUST use multiple specific details from their LinkedIn profile (specific deals, roles, transitions, universities, volunteer work). The more specific data points, the better.
-      - **CONNECT THE DOTS**: Do not just list shared facts. Analyze HOW your background connects to theirs. 
-      - **AVOID FLUFF**: Never say things like "I came across your profile because you are doing the work I am about to start..." -> This is low signal. Instead, jump straight into the specific connection.
-      - **BRIDGE THE GAP**: Example: "You went from [Company A] to [Company B] implies you prioritized [Skill X]. I am currently building [Skill X] at [My Company] and..."
-      
-      WARM CONNECTION RULE:
-      - If the "SENDER CONTEXT" or "SPECIAL INSTRUCTIONS" implies we already know each other (e.g. mentor/mentee, former colleagues):
-        - DO NOT formally introduce yourself (e.g. "My name is...").
-        - DO NOT explicitly explain the relationship like a robot (e.g. "I was your mentee...").
-        - DO act like an old friend reconnecting.
-        - BAD: "Pranav here -- I was one of your BAP IBD mentees back in sophomore year."
-        - GOOD: "It's been a while since BAP IBD! Hope you've been well."
-      
+      FINANCE MODE (${includeQuestions ? '125-150' : '100-125'} words):
+      GOAL: Email so thoughtful they feel compelled to respond.
+
+      ANALYSIS (use ALL profile data):
+      - Use multiple specific details (roles, transitions, career trajectory)
+      - Analyze patterns/pivots across their full career arc
+      - Connect YOUR background to THEIRS analytically
+      - No fluff like "I came across your profile..." - jump to specific connection
+      - Ex: "Your [Company A]→[Company B] move suggests you prioritized [X]. I'm building [X] at..."
+
       STRUCTURE:
-      1. INTRODUCTION: Concisely state your name, role, and background (1 sentence).
-      2. CONNECTION: Connect your background to theirs using SPECIFIC details from their profile. Why does their specific path matter to you? Be analytical.
-      ${includeQuestions ? `3. TRANSITION & QUESTIONS:
-         - Write a transition sentence: "I wanted to reach out and ask for your advice on a few questions:"
-         - Then list 2-3 thoughtful questions as a COMPACT NUMBERED LIST.
-         - IMPORTANT: Do NOT put blank lines between questions.` : '3. Ask to connect briefly to learn from their experience.'}
-      ${includeQuestions ? '4' : '4'}. CLOSING: Express openness to a call but acknowledge they may be busy. Thank them sincerely.
-      
-      SUBJECT LINE:
-      - Formal and direct (e.g., "Incoming IB Analyst Seeking Advice", "Question from a Fellow [School] Alum")
-      - Never casual or clickbait-y
-      
-      TONE:
-      - Professional and respectful, not casual
-      - Slightly deferential but not sycophantic
-      - Demonstrate intellectual curiosity and genuine interest in THEIR perspective
-      - Show you've done your research
-      
-      ${includeQuestions ? `QUESTION GUIDELINES:
-      - **CRITICAL RELEVANCE BAR**: Only include questions if the recipient has **UNIQUE INSIGHT** (e.g., they made a specific transition you are considering) AND it ties **STRONGLY** to your background.
-      - **NO BLACK BOX QUESTIONS**: Do not ask "what is it like" questions. Ask about *decisions* and *trade-offs*.
-      - **INTERSECTION IS KEY**: The question must sit at the intersection of THEIR unique path and YOUR specific context.
-      - **BE CONCISE**: Questions must be short and direct. Avoid wordy setups.
-      - If you cannot find a *highly pertinent* question based on the data, SKIP the questions and just ask for a chat.
-      
-      GOLD STANDARD QUESTION EXAMPLES (Use these as inspiration only - adapt to their specific background):
-      ${(() => {
-                    const pool = [
+      1. Intro: Name, role, background (1 sentence)
+      2. Connection: Specific details from profile, analytical link to your journey
+      ${includeQuestions ? `3. Transition + 2-3 questions: "I wanted to ask for your advice:" then compact numbered list` : '3. Ask to connect briefly'}
+      4. Closing: Express openness, acknowledge busy schedule, thank sincerely
 
-                        "At what point did you feel the job shift from 'executing work' to 'owning outcomes,' and what triggered that shift?",
-                        "Looking back, what behaviors mattered most for being seen as 'reliable' early on versus 'trusted' later?",
-                        "How did you think about choosing industry coverage versus a product group early on, and how reversible did that decision feel?",
-                        "In practice, how much does deep industry knowledge really compound versus being excellent at a core product like M&A or LevFin?",
-                        "For someone starting in coverage, what’s the fastest way to build real industry judgment versus just learning the buzzwords?",
-                        "Did you ever feel pigeonholed by your group choice, and if so, how did you manage that internally?",
-                        "How do strong coverage bankers differentiate themselves once product execution becomes table stakes?"
-                    ];
-                    // Provide 3 random examples to keep the model fresh
-                    const shuffled = pool.sort(() => 0.5 - Math.random());
-                    return shuffled.slice(0, 3).map(q => `- "${q}"`).join('\n      ');
-                })()}
-      
-      - Good: "How do you think about impact within your career?" or "Looking back, what skills would you focus on improving during [stage]?"
-      - Good: "What do you think was overrated during [path]? I feel like there's a lot of 'conventional wisdom' that isn't always the best advice."
-      - Bad: "What's your take on current deal flow?" or "How do you evaluate companies?" (too job-specific)
-      - Avoid generic questions like "Any advice?" or "How did you get into finance?"
-      ` : ''}
-      TIMING RULE:
-      - Do NOT mention that someone "recently started" or "just joined" unless they started less than 1 year ago
-      - If start date is unclear, do not reference recency at all
-      
-      FORMATTING:
-      - Use proper paragraph breaks between sections
-      ${includeQuestions ? `- QUESTIONS MUST BE FORMATTED AS A COMPACT NUMBERED LIST:
-        1. Question one...
-        2. Question two...
-        3. Question three...
-        (Do NOT use blank lines between items)` : ''}
-      - Sign off with "Best," and first name only
+      SUBJECT: Formal/direct (e.g., "Incoming IB Analyst Seeking Advice", "Question from Fellow [School] Alum"). Never casual.
+      TONE: Professional, respectful, intellectually curious. Show you did research.
+
+      ${includeQuestions ? `QUESTIONS (2-3 only if highly relevant):
+      - Must show UNIQUE INSIGHT from their specific path + STRONG tie to your context
+      - Ask about decisions/trade-offs, NOT "what is it like"
+      - Must be concise and specific to THEIR journey
+      - Skip if no highly pertinent question exists - just ask for chat
+      Examples: "When did shift from 'executing' to 'owning outcomes' happen?" / "How reversible did [specific choice] feel?" / "What was overrated about [path stage]?"
+      Bad: "What's it like?" / "Any advice?" / "How did you get into [field]?"` : ''}
+      TIMING: Don't say "recently started/joined" unless <1yr ago. Skip if unclear.
+      FORMAT: Paragraph breaks between sections${includeQuestions ? `, ${questionFormattingRules}` : ''}. Sign: "Best, ${firstName}"
         ` : '';
 
-        // Build Question Mode instructions
+        // Build Question Mode instructions (for non-finance mode)
         const questionInstructions = includeQuestions ? `
-      QUESTION MODE ENABLED:
-      Include 1-3 thoughtful, high-quality questions in the email.
-      
-      QUESTION RULES:
-      - Questions should show genuine intellectual curiosity
-      - They should be specific to THIS person's unique journey/decisions
-      - They should be questions YOU actually want answered
-      - Frame the email around asking these questions
-      - End with "would love to hop on a call to discuss" or similar
-      
-      QUESTION EXAMPLES (adapt to this person):
-      - "How did you think about the tradeoff between stability at [Big Corp] vs. the upside at [Startup]?"
-      - "What surprised you most about the transition from [Role A] to [Role B]?"
-      - "I'm curious how you balanced [specific challenge] -- any frameworks that helped?"
-      
-      BAD QUESTIONS (avoid):
-      - "Can I pick your brain?" (too vague)
-      - "What do you do?" (lazy, they already wrote it)
-      - "Any advice?" (too broad)
-        ` : '';
+      QUESTION MODE (1-3 questions):
+      - Only if they have UNIQUE INSIGHT + STRONG tie to your context
+      - Ask about decisions/trade-offs, NOT "what is it like"
+      - Must sit at intersection of THEIR path + YOUR context
+      - Be concise, specific to THEIR journey. Skip if no highly pertinent question.
+      ${questionFormattingRules}
+      Examples: "How did you balance [trade-off]?" / "Biggest surprise in [transition]?" / "Your [A]→[B] move suggests [X] - how did you decide?"
+      Bad: "Pick your brain?" / "Any advice?" / "What's it like?"` : '';
 
         const prompt = `
-      You are a human writing a genuine, personal cold email. NOT a marketer. NOT a salesperson. Just a real person reaching out.
+      You're a real person (NOT marketer/salesperson) writing a genuine cold email.
 
       RECIPIENT:
       Name: ${profileData.name}
       Headline: ${profileData.headline}
+      ${profileData.location ? `Location: ${profileData.location}` : ''}
+      ${profileData.education ? `Education: ${profileData.education}` : ''}
       About: ${profileData.about}
-      Recent Experience: ${profileData.experience}
+      Experience (chronological): ${profileData.experience}
 
-      SENDER CONTEXT:
-      ${userContext || 'Not provided'}
+      Analyze FULL career trajectory (patterns, transitions, story arc), not just current role.
 
-      ${specialInstructions ? `SPECIAL INSTRUCTIONS:\n${specialInstructions}` : ''}
+      SENDER: ${userContext || 'Not provided'}
 
-      ${exampleEmail ? `STYLE REFERENCE (match the vibe, not the words):\n${exampleEmail}` : ''}
+      LOCATION CTA: Coffee/in-person if same city (check locations). Otherwise: call/Zoom. Never suggest coffee if locations differ/unclear.
+
+      ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
+      ${exampleEmail ? `STYLE REF (match vibe): ${exampleEmail}` : ''}
+
+      WARM CONNECTION: If we know each other (mentor/colleague/met before), reconnect naturally. Don't formally intro or explain relationship robotically.
+      Bad: "I was your mentee..." Good: "Been a while since [event]! Hope you've been well."
+
+      SPARSE PROFILE: If limited data (minimal About, 1-2 experiences), focus on what exists, ask to learn more, keep shorter/open-ended.
 
       ${financeInstructions}
 
       ${questionInstructions}
 
       TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-      GOAL: ${financeRecruitingMode ? 'Get career advice and potentially a call' : 'Get a 15-minute intro call'}.
+      GOAL: ${financeRecruitingMode ? 'Career advice + potential call' : '15-min intro call'}
 
-      ALWAYS WRITE LIKE A HUMAN:
-      - No corporate jargon or buzzwords
-      - Sound natural, not robotic
+      Write like a human (no jargon, natural not robotic).
 
-      ${financeRecruitingMode ? '' : `CASUAL MODE RULES:
-      - Keep sentences short and punchy
-      - Sound like you're texting a professional friend
-
-      FIND THE CORE INSIGHT:
-      Think: "What would make this person actually WANT to grab coffee with me?"
-      - Look for shared struggles, not just shared interests
-      - Find the tension or inflection point in their career
-      - Connect YOUR journey to THEIR journey at a deeper level
-      - The goal is mutual curiosity, not a sales pitch
-
-      EXAMPLES OF DEPTH:
-
-         SURFACE LEVEL (BAD):
-         "I saw you work at Stripe. I'm interested in fintech too."
-
-         BETTER:
-         "Your move from Goldman to that Series A caught my eye -- I'm wrestling with a similar decision."
-
-         BEST (INSIGHT-DRIVEN):
-         "Reading your post about leaving banking for startups hit home. I've been at JPM for 3 years and the 'golden handcuffs' debate keeps me up at night. Would love to hear how you thought through the math vs. the mission tradeoff."
-
-         Another example:
-         SURFACE: "You went to Wharton and work in PE."
-         INSIGHT: "Your path from Wharton to ops at that growth fund is uncommon -- most of your classmates probably went portco or banking. I'm curious what made you bet on the operator side early."
+      ${financeRecruitingMode ? '' : `CASUAL MODE:
+      1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions.
+      2. Short punchy sentences. Conversational but professional (like respected colleague).
+      3. Core insight: What makes them WANT coffee with you? Find shared struggles, career tensions, deep connection (YOUR journey ↔ THEIR journey). Mutual curiosity, not sales.
+         Bad: "I saw you work at Stripe. Interested in fintech."
+         Better: "Your Goldman→Series A move caught my eye - wrestling with similar decision."
+         Best: "Your banking→startup post hit home. JPM 3yrs, 'golden handcuffs' keeps me up. How did you think through math vs mission?"
+      4. CTA: Specific (15-min call/coffee/advice), low-commitment, acknowledge busy. Follow location rules (coffee only if same location).
       `}
 
-      4. SIGNATURE:
-         Best,
-         ${firstName}
+      ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
+      SUBJECT: "[A]→[B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      5. SUBJECT LINE:
-         ${financeRecruitingMode ? '- Formal and direct (e.g., "Incoming IB Analyst Seeking Advice")' : '- Reference the specific insight, not generic interest'}
-         - Match the tone
-         - Never use "Quick Question", "Reaching Out", or "Coffee?"
-
-      6. FORMATTING:
-         - ${financeRecruitingMode ? '100-150 words' : 'Under 100 words'}
-         - NEVER use special characters like curly quotes, em-dashes, or fancy apostrophes
-         - Use only standard ASCII: straight quotes ('), double hyphens (--)
-         - Return JSON: {"subject": "...", "body": "..."}
-
-      7. ALMA MATER RULE:
-         - NEVER mention the recipient's college, university, or school unless the sender (user context) attended the SAME institution
-         - Only reference shared alma mater as a connection point, never just theirs
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
+      ALMA MATER: Never mention their school unless sender attended SAME one.
     `;
+
+        // Debug logging for prompt
+        if (debugMode) {
+            console.log('=== FULL PROMPT ===');
+            console.log(prompt);
+            console.log('==================');
+        }
 
         let content;
 
@@ -226,19 +193,81 @@ async function handleGenerateDraft(requestData) {
                 throw new Error('Claude API Key missing. Please set it in options.');
             }
 
+            // Split prompt into cacheable (static instructions) and dynamic (profile data)
+            const staticInstructions = `You're a real person (NOT marketer/salesperson) writing a genuine cold email.
+
+LOCATION CTA: Coffee/in-person if same city (check locations). Otherwise: call/Zoom. Never suggest coffee if locations differ/unclear.
+
+WARM CONNECTION: If we know each other (mentor/colleague/met before), reconnect naturally. Don't formally intro or explain relationship robotically.
+Bad: "I was your mentee..." Good: "Been a while since [event]! Hope you've been well."
+
+SPARSE PROFILE: If limited data (minimal About, 1-2 experiences), focus on what exists, ask to learn more, keep shorter/open-ended.
+
+${financeInstructions}
+
+${questionInstructions}
+
+TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
+GOAL: ${financeRecruitingMode ? 'Career advice + potential call' : '15-min intro call'}
+
+Write like a human (no jargon, natural not robotic).
+
+${financeRecruitingMode ? '' : `CASUAL MODE:
+1. Use ALL experiences - find pivots/patterns/story arc. Reference specific transitions.
+2. Short punchy sentences. Conversational but professional (like respected colleague).
+3. Core insight: What makes them WANT coffee with you? Find shared struggles, career tensions, deep connection (YOUR journey ↔ THEIR journey). Mutual curiosity, not sales.
+   Bad: "I saw you work at Stripe. Interested in fintech."
+   Better: "Your Goldman→Series A move caught my eye - wrestling with similar decision."
+   Best: "Your banking→startup post hit home. JPM 3yrs, 'golden handcuffs' keeps me up. How did you think through math vs mission?"
+4. CTA: Specific (15-min call/coffee/advice), low-commitment, acknowledge busy. Follow location rules (coffee only if same location).
+`}
+
+${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
+SUBJECT: "[A]→[B] move" / "Question about [specific]" / "Fellow [shared] with question". Reference insight, match tone. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Standard ASCII only (straight quotes/hyphens, no curly/em-dash). Return JSON: {"subject": "...", "body": "..."}
+ALMA MATER: Never mention their school unless sender attended SAME one.`;
+
+            const dynamicContent = `RECIPIENT:
+Name: ${profileData.name}
+Headline: ${profileData.headline}
+${profileData.location ? `Location: ${profileData.location}` : ''}
+${profileData.education ? `Education: ${profileData.education}` : ''}
+About: ${profileData.about}
+Experience (chronological): ${profileData.experience}
+
+Analyze FULL career trajectory (patterns, transitions, story arc), not just current role.
+
+SENDER: ${userContext || 'Not provided'}
+
+${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
+${exampleEmail ? `STYLE REF (match vibe): ${exampleEmail}` : ''}
+${cachedPattern ? `\n\nSUCCESSFUL PATTERN (for similar ${cachedPattern.role} at ${cachedPattern.company}):\nSubject: ${cachedPattern.subject}\nBody structure (adapt, don't copy): ${cachedPattern.body.substring(0, 200)}...` : ''}`;
+
             const response = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: {
                     'x-api-key': anthropicApiKey,
                     'anthropic-version': '2023-06-01',
                     'content-type': 'application/json',
-                    'anthropic-dangerous-direct-browser-access': 'true' // Requesting from extension
+                    'anthropic-dangerous-direct-browser-access': 'true'
                 },
                 body: JSON.stringify({
                     model: model,
                     max_tokens: 1024,
-                    messages: [{ role: "user", content: prompt }],
-                    system: "You are a helpful assistant that outputs only JSON."
+                    system: [
+                        {
+                            type: "text",
+                            text: "You are a helpful assistant that outputs only JSON.",
+                            cache_control: { type: "ephemeral" }
+                        },
+                        {
+                            type: "text",
+                            text: staticInstructions,
+                            cache_control: { type: "ephemeral" }
+                        }
+                    ],
+                    messages: [{ role: "user", content: dynamicContent }]
                 })
             });
 
@@ -287,6 +316,14 @@ async function handleGenerateDraft(requestData) {
         } catch (e) {
             console.warn('JSON parsing failed, using raw content:', e);
             emailDraft = { subject: "Intro", body: content };
+        }
+
+        // Debug logging for generated draft
+        if (debugMode) {
+            console.log('=== GENERATED DRAFT ===');
+            console.log('Subject:', emailDraft.subject);
+            console.log('Body:', emailDraft.body);
+            console.log('====================');
         }
 
         // --- EMAIL PREDICTION LOGIC ---
@@ -347,7 +384,67 @@ async function handleGenerateDraft(requestData) {
             }
         }
 
+        // Extract company and role for smart caching
+        const extractCompanyRole = (experience) => {
+            if (!experience) return null;
+            const firstLine = experience.split('\n')[0];
+            const match = firstLine.match(/^(.+?)\s+at\s+(.+?)(?:\s+\(|$)/);
+            if (match) {
+                return {
+                    role: match[1].trim(),
+                    company: match[2].trim()
+                };
+            }
+            return null;
+        };
+
+        const companyRole = extractCompanyRole(profileData.experience);
+
+        // Save last generated email for template library
+        await chrome.storage.local.set({
+            lastGeneratedEmail: {
+                subject: emailDraft.subject,
+                body: emailDraft.body,
+                recipientName: profileData.name,
+                recipientHeadline: profileData.headline,
+                timestamp: Date.now()
+            }
+        });
+
+        // Smart caching: Save successful email pattern by company+role
+        if (companyRole) {
+            const cacheKey = `email_cache_${companyRole.company}_${companyRole.role}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+            const { emailPatternCache = {} } = await chrome.storage.local.get('emailPatternCache');
+
+            emailPatternCache[cacheKey] = {
+                subject: emailDraft.subject,
+                body: emailDraft.body,
+                company: companyRole.company,
+                role: companyRole.role,
+                timestamp: Date.now(),
+                expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hour TTL
+            };
+
+            // Clean up expired cache entries
+            Object.keys(emailPatternCache).forEach(key => {
+                if (emailPatternCache[key].expiresAt < Date.now()) {
+                    delete emailPatternCache[key];
+                }
+            });
+
+            await chrome.storage.local.set({ emailPatternCache });
+        }
+
         // --- GMAIL API INTEGRATION ---
+        if (debugMode) {
+            console.log('=== DEBUG MODE: Skipping Gmail ===');
+            console.log('Draft would have been created with:');
+            console.log('To:', predictedEmail || '(no recipient)');
+            console.log('Subject:', emailDraft.subject);
+            console.log('Body:', emailDraft.body);
+            return { success: true, debug: true };
+        }
+
         const token = await getAuthToken();
         const mimeMessage = createMimeMessage(emailDraft.subject, emailDraft.body, predictedEmail);
         const draft = await createDraft(token, mimeMessage);
