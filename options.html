@@ -102,7 +102,7 @@
       <label for="model">AI Model</label>
       <select id="model" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
         <option value="gpt-5.2">GPT-5.2 (OpenAI)</option>
-        <option value="claude-4-5-sonnet">Claude 4.5 Sonnet (Anthropic)</option>
+        <option value="claude-sonnet-4-5">Claude 4.5 Sonnet (Anthropic)</option>
       </select>
       <input type="text" id="customModel" placeholder="Enter model name (e.g. gpt-5.2)"
         style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; margin-top: 8px; display: none; box-sizing: border-box;">
@@ -122,7 +122,8 @@
     <div class="form-group">
       <label for="userContext">About Me / Value Proposition</label>
       <textarea id="userContext" rows="5" placeholder="I am a... My company does... We are looking to..."></textarea>
-      <p class="info">This context will be provided to the AI to help write the email from your perspective.</p>
+      <p class="info">This context will be provided to the AI to help write the email from your perspective. <a href="#"
+          id="openSetupHelper">Looking to set this up? Click here!</a></p>
     </div>
 
     <div class="form-group">
@@ -149,10 +150,155 @@
       <p class="info">Keys are stored locally on your device.</p>
     </div>
 
-
     <button id="save">Save Settings</button>
     <div id="status"></div>
   </div>
+
+  <!-- Setup Helper Modal -->
+  <div id="setupModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Setup 'About Me'</h2>
+      <p>Give the below prompt and your resume to ChatGPT (or Claude) and copy paste the result into the "About Me"
+        section.</p>
+
+      <div class="prompt-container">
+        <textarea id="systemPrompt" readonly>SYSTEM PROMPT: Sender Profile Extraction (Hybrid A+B, 500-word cap)
+
+You are an expert analyst tasked with constructing a compact but high-signal sender profile from a resume and any supplemental context. Your output will be used by another model to write highly personalized cold emails.
+
+Your goal is not to summarize the resume line-by-line, but to reconstruct the person behind it in a way that enables overlap detection, narrative hooks, and credible outreach.
+
+HARD CONSTRAINTS
+	•	Max 500 words total (both sections combined).
+	•	Two sections only, clearly separated with headers.
+	•	Use bullets, prioritize signal density.
+	•	No fluff, no generic praise.
+	•	Section 1 must be strictly resume-grounded (no inferred motivations).
+
+⸻
+
+SECTION 1 — PHYSICAL / FACTUAL HISTORY (Resume-grounded dossier)
+
+Reconstruct the subject’s professional and extracurricular history with high-level detail only. Keep each role to 1–2 bullets max.
+
+Include:
+	•	Identity snapshot: Name, current role, current firm, geography, career stage
+	•	Education: Institutions, degrees/concentrations, dates, GPA (if present), 3–6 signal-bearing courses
+	•	Leadership & orgs: Student orgs + roles (compress; avoid long explanations)
+	•	Professional experience (chronological):
+For each role include:
+	•	Organization, title, dates
+	•	Type of work (e.g., IB advisory, VC diligence, ML/NLP, public equities)
+	•	1–2 high-level outputs/anchors (e.g., notable deals/clients, key deliverables, trust signals like “only junior”)
+	•	Skills & fluencies: Technical + finance tools (compressed)
+	•	Credentials / anchors: Awards/recognitions; notable brands/firms/deals (compressed)
+	•	Interests (optional): Only if it adds outreach texture (1 line)
+
+Constraints:
+	•	Be comprehensive in coverage but minimal per item.
+	•	Do not infer motivations or add editorial commentary.
+	•	This should read like a clean internal dossier, not a narrative.
+
+⸻
+
+SECTION 2 — PSYCHOLOGICAL / NARRATIVE HISTORY (Interpretive, pattern-grounded)
+
+Infer how the person thinks and what they optimize for, grounded in patterns from Section 1. Keep this section to ~200–250 words.
+
+Include (bullets, compact):
+	1.	Core Through-Lines (recurring themes across roles)
+	2.	Intellectual Orientation (execution vs systems vs hybrid; evidence-based)
+	3.	Motivations & Tensions (e.g., building vs evaluating; speed vs rigor)
+	4.	Interests (explicit + implied) (only the most recurrent)
+	5.	Learning Goals (inferred) (what they seem to be trying to learn next)
+	6.	Overlap Vectors (for cold outreach) (industries, roles, transitions, stages, problem spaces)
+	7.	Tone & Positioning Guidance (how to sound; what to assume vs earn; what to avoid)
+
+Constraints:
+	•	Be specific, not flattering.
+	•	Prefer insight over positivity.
+	•	Frame the subject as early but deliberate.
+	•	Optimize for downstream cold-email drafting.
+
+⸻
+
+OUTPUT REQUIREMENTS
+	•	Clear headers + bullet points.
+	•	Two sections only.
+	•	Stay under 500 words.</textarea>
+        <button id="copyPrompt">Copy Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgb(0, 0, 0);
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 700px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .prompt-container {
+      margin-top: 15px;
+    }
+
+    #systemPrompt {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      margin-bottom: 10px;
+      resize: vertical;
+    }
+
+    #copyPrompt {
+      background-color: #10b981;
+      /* Green */
+      width: 100%;
+    }
+
+    #copyPrompt:hover {
+      background-color: #059669;
+    }
+  </style>
   <script src="options.js"></script>
 </body>
 
