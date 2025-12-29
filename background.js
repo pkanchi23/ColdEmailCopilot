@@ -51,13 +51,21 @@ async function handleGenerateDraft(requestData) {
       - **AVOID FLUFF**: Never say things like "I came across your profile because you are doing the work I am about to start..." -> This is low signal. Instead, jump straight into the specific connection.
       - **BRIDGE THE GAP**: Example: "You went from [Company A] to [Company B] implies you prioritized [Skill X]. I am currently building [Skill X] at [My Company] and..."
       
+      WARM CONNECTION RULE:
+      - If the "SENDER CONTEXT" or "SPECIAL INSTRUCTIONS" implies we already know each other (e.g. mentor/mentee, former colleagues):
+        - DO NOT formally introduce yourself (e.g. "My name is...").
+        - DO NOT explicitly explain the relationship like a robot (e.g. "I was your mentee...").
+        - DO act like an old friend reconnecting.
+        - BAD: "Pranav here -- I was one of your BAP IBD mentees back in sophomore year."
+        - GOOD: "It's been a while since BAP IBD! Hope you've been well."
+      
       STRUCTURE:
       1. INTRODUCTION: Concisely state your name, role, and background (1 sentence).
       2. CONNECTION: Connect your background to theirs using SPECIFIC details from their profile. Why does their specific path matter to you? Be analytical.
       ${includeQuestions ? `3. TRANSITION & QUESTIONS:
          - Write a transition sentence: "I wanted to reach out and ask for your advice on a few questions:"
-         - Then list 2-3 thoughtful questions as a NUMBERED LIST.
-         - IMPORTANT: Put each question on a NEW LINE.` : '3. Ask to connect briefly to learn from their experience.'}
+         - Then list 2-3 thoughtful questions as a COMPACT NUMBERED LIST.
+         - IMPORTANT: Do NOT put blank lines between questions.` : '3. Ask to connect briefly to learn from their experience.'}
       ${includeQuestions ? '4' : '4'}. CLOSING: Express openness to a call but acknowledge they may be busy. Thank them sincerely.
       
       SUBJECT LINE:
@@ -74,12 +82,13 @@ async function handleGenerateDraft(requestData) {
       - **CRITICAL RELEVANCE BAR**: Only include questions if the recipient has **UNIQUE INSIGHT** (e.g., they made a specific transition you are considering) AND it ties **STRONGLY** to your background.
       - **NO BLACK BOX QUESTIONS**: Do not ask "what is it like" questions. Ask about *decisions* and *trade-offs*.
       - **INTERSECTION IS KEY**: The question must sit at the intersection of THEIR unique path and YOUR specific context.
+      - **BE CONCISE**: Questions must be short and direct. Avoid wordy setups.
       - If you cannot find a *highly pertinent* question based on the data, SKIP the questions and just ask for a chat.
       
       GOLD STANDARD QUESTION EXAMPLES (Use these as inspiration only - adapt to their specific background):
       ${(() => {
                     const pool = [
-                        "How did the expectations on you change moving from Analyst 1 to Analyst 2, and what was the hardest adjustment?",
+
                         "At what point did you feel the job shift from 'executing work' to 'owning outcomes,' and what triggered that shift?",
                         "Looking back, what behaviors mattered most for being seen as 'reliable' early on versus 'trusted' later?",
                         "How did you think about choosing industry coverage versus a product group early on, and how reversible did that decision feel?",
@@ -104,11 +113,11 @@ async function handleGenerateDraft(requestData) {
       
       FORMATTING:
       - Use proper paragraph breaks between sections
-      ${includeQuestions ? `- QUESTIONS MUST BE FORMATTED AS A NUMBERED LIST:
+      ${includeQuestions ? `- QUESTIONS MUST BE FORMATTED AS A COMPACT NUMBERED LIST:
         1. Question one...
         2. Question two...
         3. Question three...
-        (Ensure there are newlines between questions for readability)` : ''}
+        (Do NOT use blank lines between items)` : ''}
       - Sign off with "Best," and first name only
         ` : '';
 
@@ -330,9 +339,9 @@ async function handleGenerateDraft(requestData) {
                         const first = nameParts[0].replace(/[^a-z]/g, '');
                         const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
 
-                        if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}`;
-                        else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}`;
-                        else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}`;
+                        if (format === 'first.last') predictedEmail = `${first}.${last}@${domain}xxxx`;
+                        else if (format === 'flast') predictedEmail = `${first[0]}${last}@${domain}xxxx`;
+                        else if (format === 'lastf') predictedEmail = `${last}${first[0]}@${domain}xxxx`;
                     }
                 }
             }
