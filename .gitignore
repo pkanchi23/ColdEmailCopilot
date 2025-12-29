@@ -81,3 +81,7 @@ typings/
 
 # macOS
 .DS_Store
+
+# Extension private key (DO NOT COMMIT)
+extension-key.pem
+get-extension-id.js
