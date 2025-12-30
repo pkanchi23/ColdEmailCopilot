@@ -144,13 +144,16 @@
       <input type="checkbox" id="debugMode" style="width: 18px; height: 18px;">
       <label for="debugMode" style="margin-bottom: 0; cursor: pointer;">Debug Mode</label>
     </div>
-    <p class="info" style="margin-top: -10px;">Shows scraped data and prompts in console. Skips Gmail open for testing.</p>
+    <p class="info" style="margin-top: -10px;">Shows scraped data and prompts in console. Skips Gmail open for testing.
+    </p>
 
     <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
       <input type="checkbox" id="webGrounding" style="width: 18px; height: 18px;">
-      <label for="webGrounding" style="margin-bottom: 0; cursor: pointer;">Web Grounding <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">EXPERIMENTAL</span></label>
+      <label for="webGrounding" style="margin-bottom: 0; cursor: pointer;">Web Grounding <span
+          style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">EXPERIMENTAL</span></label>
     </div>
-    <p class="info" style="margin-top: -10px;">⚠️ Claude/Anthropic only. Uses web search to find recent news (e.g., funding rounds, portfolio companies) to include in emails when relevant.</p>
+    <p class="info" style="margin-top: -10px;">⚠️ Claude/Anthropic only. Uses web search to find recent news (e.g.,
+      funding rounds, portfolio companies) to include in emails when relevant.</p>
 
     <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
       <input type="checkbox" id="darkMode" style="width: 18px; height: 18px;">
@@ -172,7 +175,29 @@
           You'll be prompted to sign in with Google when you generate your first email.
         </div>
       </div>
-      <p class="info" style="margin-top: 8px;">Claude models use centralized authentication. Contact your administrator if you need access.</p>
+      <p class="info" style="margin-top: 8px;">Claude models use centralized authentication. Contact your administrator
+        if you need access.</p>
+    </div>
+
+    <!-- Usage Statistics -->
+    <div class="form-group" style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+      <label>Usage Statistics (Local)</label>
+      <div style="padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <strong>Requests:</strong> <span id="statsRequests">0</span>
+          </div>
+          <div>
+            <strong>Total Tokens:</strong> <span id="statsTotalTokens">0</span>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: #6b7280;">
+          <div>Input Tokens: <span id="statsInputTokens">0</span></div>
+          <div>Output Tokens: <span id="statsOutputTokens">0</span></div>
+        </div>
+        <button id="resetStats" style="margin-top: 12px; padding: 6px 12px; font-size: 12px; background: #ef4444;">Reset
+          Statistics</button>
+      </div>
     </div>
 
     <!-- OpenAI API Key (Optional) -->
@@ -191,17 +216,20 @@
 
         <div class="form-group">
           <label for="webhookUrl">Webhook URL (Optional)</label>
-          <input type="url" id="webhookUrl" placeholder="https://your-webhook.com/endpoint" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; box-sizing: border-box;">
+          <input type="url" id="webhookUrl" placeholder="https://your-webhook.com/endpoint"
+            style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; box-sizing: border-box;">
           <p class="info">Send generated emails to a webhook for logging/analytics.</p>
         </div>
 
         <div class="form-group" style="margin-top: 20px;">
           <label style="display: block; margin-bottom: 10px; font-weight: 500;">Backup & Restore</label>
           <div style="display: flex; gap: 10px;">
-            <button type="button" id="exportSettings" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+            <button type="button" id="exportSettings"
+              style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
               Export Settings
             </button>
-            <button type="button" id="importSettings" style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+            <button type="button" id="importSettings"
+              style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
               Import Settings
             </button>
           </div>

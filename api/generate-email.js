@@ -136,6 +136,55 @@ export default async function handler(req, res) {
       });
     }
 
+    // --- DB INTEGRATION START ---
+    // Extract settings from request to save/update profile
+    const {
+      userContext: aboutMe,
+      exampleEmail,
+      tone: preferredTone,
+      model: preferredModel
+    } = req.body; // Assuming these are sent in the body along with 'messages'
+
+    // We use the Pool from @neondatabase/serverless
+    const { Pool } = await import('@neondatabase/serverless');
+    const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+
+    let planTier = 'free';
+
+    try {
+      // Upsert User Profile & Get Plan
+      // We update settings if provided, otherwise keep existing.
+      // We always return the plan_tier.
+      const profileQuery = `
+            INSERT INTO user_profiles (email, about_me, example_email, preferred_tone, preferred_model)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (email) DO UPDATE SET
+                about_me = COALESCE(EXCLUDED.about_me, user_profiles.about_me),
+                example_email = COALESCE(EXCLUDED.example_email, user_profiles.example_email),
+                preferred_tone = COALESCE(EXCLUDED.preferred_tone, user_profiles.preferred_tone),
+                preferred_model = COALESCE(EXCLUDED.preferred_model, user_profiles.preferred_model),
+                updated_at = NOW()
+            RETURNING plan_tier;
+        `;
+
+      const profileRes = await pool.query(profileQuery, [
+        userEmail,
+        aboutMe || null,
+        exampleEmail || null,
+        preferredTone || null,
+        preferredModel || null
+      ]);
+
+      if (profileRes.rows.length > 0) {
+        planTier = profileRes.rows[0].plan_tier;
+      }
+
+    } catch (dbError) {
+      console.error('Database Error (Profile Upsert):', dbError);
+      // We generally default to 'free' and proceed if DB fails, to avoid blocking generation
+    }
+    // --- DB INTEGRATION END ---
+
     // 4. Proxy request to Anthropic API
     if (DEBUG) console.log('Proxying request to Anthropic...');
 
@@ -162,10 +211,36 @@ export default async function handler(req, res) {
       });
     }
 
+    // --- DB USAGE TRACKING START ---
+    try {
+      if (anthropicData.usage) {
+        const inputTokens = anthropicData.usage.input_tokens || 0;
+        const outputTokens = anthropicData.usage.output_tokens || 0;
+
+        await pool.query(`
+                UPDATE user_profiles 
+                SET 
+                    total_emails_sent = total_emails_sent + 1,
+                    total_input_tokens = total_input_tokens + $2,
+                    total_output_tokens = total_output_tokens + $3,
+                    updated_at = NOW()
+                WHERE email = $1
+            `, [userEmail, inputTokens, outputTokens]);
+      }
+    } catch (dbError) {
+      console.error('Database Error (Usage Tracking):', dbError);
+    } finally {
+      await pool.end(); // Close DB connection
+    }
+    // --- DB USAGE TRACKING END ---
+
     if (DEBUG) console.log('Request successful for:', userEmail);
 
-    // 5. Return response
-    return res.status(200).json(anthropicData);
+    // 5. Return response (include plan tier metadata for client if needed)
+    return res.status(200).json({
+      ...anthropicData,
+      _meta: { plan_tier: planTier }
+    });
 
   } catch (error) {
     console.error('Handler error:', error);
