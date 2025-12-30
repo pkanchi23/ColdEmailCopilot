@@ -162,9 +162,24 @@ const restoreOptions = () => {
 
       // Check authentication status
       checkAuthStatus();
+      loadUsageStats();
     }
   );
 };
+
+function loadUsageStats() {
+  chrome.storage.local.get(['stats_requestCount', 'stats_inputTokens', 'stats_outputTokens'], (result) => {
+    const requests = result.stats_requestCount || 0;
+    const inputTokens = result.stats_inputTokens || 0;
+    const outputTokens = result.stats_outputTokens || 0;
+    const totalTokens = inputTokens + outputTokens;
+
+    document.getElementById('statsRequests').textContent = requests;
+    document.getElementById('statsTotalTokens').textContent = totalTokens;
+    document.getElementById('statsInputTokens').textContent = inputTokens;
+    document.getElementById('statsOutputTokens').textContent = outputTokens;
+  });
+}
 
 const showStatus = (msg, type) => {
   const status = document.getElementById('status');
@@ -287,5 +302,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('exportSettings').addEventListener('click', handleExportSettings);
   document.getElementById('importSettings').addEventListener('click', handleImportSettings);
   document.getElementById('importFile').addEventListener('change', processImportFile);
+  document.getElementById('resetStats').addEventListener('click', resetStats);
 });
 document.getElementById('save').addEventListener('click', saveOptions);
+
+function resetStats() {
+  if (confirm('Are you sure you want to reset your usage statistics?')) {
+    chrome.storage.local.set({
+      stats_requestCount: 0,
+      stats_inputTokens: 0,
+      stats_outputTokens: 0
+    }, () => {
+      loadUsageStats(); // Refresh UI
+      showStatus('Statistics reset.', 'success');
+    });
+  }
+}
