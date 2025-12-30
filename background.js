@@ -1,12 +1,61 @@
 /**
  * Import utilities for service worker
  */
-importScripts('utils.js');
+importScripts('utils.js', 'config.js');
 
 /**
  * Initialize rate limiter - 10 requests per minute
  */
 const apiRateLimiter = new RateLimiter(10, 60000);
+
+/**
+ * Call Vercel proxy with authentication
+ * @param {Object} requestBody - The request body to send to Anthropic
+ * @returns {Promise<Object>} Response from Anthropic via Vercel proxy
+ */
+async function callVercelProxy(requestBody) {
+    // Get Gmail OAuth token for authentication
+    const gmailToken = await getAuthToken();
+
+    // Get Vercel API URL
+    const apiUrl = CONFIG.getApiUrl();
+
+    Logger.log('Calling Vercel proxy:', apiUrl);
+
+    const response = await fetchWithTimeout(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${gmailToken}`
+        },
+        body: JSON.stringify(requestBody)
+    }, 30000); // 30 second timeout
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            throw new Error('Authentication failed. Please sign in to Gmail again.');
+        } else if (response.status === 403) {
+            throw new Error(
+                `Your email is not authorized to use this extension. ` +
+                `${errorData.email ? `Current email: ${errorData.email}. ` : ''}` +
+                `Please contact your administrator for access.`
+            );
+        } else if (response.status === 500) {
+            throw new Error(
+                `Server error: ${errorData.message || 'Unknown error'}. ` +
+                `Please contact your administrator.`
+            );
+        } else {
+            throw new Error(
+                `API error (${response.status}): ${errorData.message || 'Unknown error'}`
+            );
+        }
+    }
+
+    return response.json();
+}
 
 /**
  * Initialize logger
@@ -19,10 +68,9 @@ const apiRateLimiter = new RateLimiter(10, 60000);
 /**
  * Perform web search to find recent news about profile
  * @param {Object} profileData - LinkedIn profile data
- * @param {string} anthropicApiKey - Anthropic API key
  * @returns {Promise<string|null>} Recent news or null
  */
-async function performWebSearch(profileData, anthropicApiKey) {
+async function performWebSearch(profileData) {
     // Construct search query based on profile
     const company = profileData.experience?.split('\n')[0]?.split(' at ')[1]?.split('(')[0]?.trim();
     const name = profileData.name;
@@ -37,28 +85,17 @@ async function performWebSearch(profileData, anthropicApiKey) {
         // Check rate limit
         await apiRateLimiter.checkLimit();
 
-        const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': anthropicApiKey,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-5',
-                max_tokens: 500,
-                messages: [{
-                    role: 'user',
-                    content: `Search for recent news about ${name} at ${company}. Focus on: funding rounds, new portfolio companies (if VC), product launches, or career moves. If nothing recent/relevant found, say "NO_RELEVANT_NEWS". Be very concise (2-3 sentences max).`
-                }],
-                tools: [{
-                    type: 'web_search_20241101'
-                }]
-            })
-        }, 30000);
-
-        const data = await response.json();
+        const data = await callVercelProxy({
+            model: 'claude-sonnet-4-5',
+            max_tokens: 500,
+            messages: [{
+                role: 'user',
+                content: `Search for recent news about ${name} at ${company}. Focus on: funding rounds, new portfolio companies (if VC), product launches, or career moves. If nothing recent/relevant found, say "NO_RELEVANT_NEWS". Be very concise (2-3 sentences max).`
+            }],
+            tools: [{
+                type: 'web_search_20241101'
+            }]
+        });
         if (data.error) {
             Logger.error('Web search error:', data.error);
             return null;
@@ -124,7 +161,7 @@ async function handleGenerateDraft(requestData) {
             exampleEmail,
             financeRecruitingMode = false,
             debugMode = false
-        } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
+        } = await chrome.storage.local.get(['openAiApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
 
         // Token counting and truncation to prevent exceeding model limits
         const originalTokens = estimateTokens(JSON.stringify(profileData));
@@ -137,8 +174,9 @@ async function handleGenerateDraft(requestData) {
 
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
-        if (!openAiApiKey && !anthropicApiKey) {
-            throw new Error('No API Key found. Please set at least one key in extension options.');
+        // Only OpenAI models require an API key now (Claude uses Vercel proxy)
+        if (model.startsWith('gpt-') && !openAiApiKey) {
+            throw new Error('OpenAI API Key required for GPT models. Please set it in extension options.');
         }
 
         // Debug mode logging
@@ -157,11 +195,11 @@ async function handleGenerateDraft(requestData) {
 
         // Perform web search if Web Grounding is enabled
         let webGroundingContext = null;
-        if (useWebGrounding && model.startsWith('claude-') && anthropicApiKey) {
+        if (useWebGrounding && model.startsWith('claude-')) {
             if (debugMode) {
                 Logger.log('=== WEB GROUNDING ENABLED ===');
             }
-            webGroundingContext = await performWebSearch(profileData, anthropicApiKey);
+            webGroundingContext = await performWebSearch(profileData);
             if (debugMode && webGroundingContext) {
                 Logger.log('Web Grounding Result:', webGroundingContext);
             }
@@ -476,34 +514,23 @@ ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
 ${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
 ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPattern.company}):\nSubject: ${cachedPattern.subject}\nBody (adapt, don't copy): ${cachedPattern.body.substring(0, 200)}...` : ''}`;
 
-            const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'x-api-key': anthropicApiKey,
-                    'anthropic-version': '2023-06-01',
-                    'content-type': 'application/json',
-                    'anthropic-dangerous-direct-browser-access': 'true'
-                },
-                body: JSON.stringify({
-                    model: model,
-                    max_tokens: 1024,
-                    system: [
-                        {
-                            type: "text",
-                            text: "You are a helpful assistant that outputs only JSON.",
-                            cache_control: { type: "ephemeral" }
-                        },
-                        {
-                            type: "text",
-                            text: staticInstructions,
-                            cache_control: { type: "ephemeral" }
-                        }
-                    ],
-                    messages: [{ role: "user", content: dynamicContent }]
-                })
+            const data = await callVercelProxy({
+                model: model,
+                max_tokens: 1024,
+                system: [
+                    {
+                        type: "text",
+                        text: "You are a helpful assistant that outputs only JSON.",
+                        cache_control: { type: "ephemeral" }
+                    },
+                    {
+                        type: "text",
+                        text: staticInstructions,
+                        cache_control: { type: "ephemeral" }
+                    }
+                ],
+                messages: [{ role: "user", content: dynamicContent }]
             });
-
-            const data = await response.json();
             if (data.error) {
                 throw new Error(data.error.message);
             }

@@ -22,7 +22,6 @@ function applyDarkMode(enabled) {
  */
 const saveOptions = () => {
   const apiKey = document.getElementById('apiKey').value;
-  const anthropicApiKey = document.getElementById('anthropicApiKey').value;
   const userContext = document.getElementById('userContext').value;
   const modelSelect = document.getElementById('model').value;
   const customModel = document.getElementById('customModel').value;
@@ -35,8 +34,9 @@ const saveOptions = () => {
   const darkMode = document.getElementById('darkMode').checked;
   const webhookUrl = document.getElementById('webhookUrl').value;
 
-  if (!apiKey && !anthropicApiKey) {
-    showStatus('Please enter at least one API Key.', 'error');
+  // Only require OpenAI API key if using GPT models
+  if (model.startsWith('gpt-') && !apiKey) {
+    showStatus('OpenAI API Key required for GPT models.', 'error');
     return;
   }
 
@@ -54,7 +54,6 @@ const saveOptions = () => {
   chrome.storage.local.set(
     {
       openAiApiKey: apiKey,
-      anthropicApiKey: anthropicApiKey,
       userContext: userContext,
       model: model,
       tone: tone,
@@ -88,13 +87,51 @@ function isValidUrl(string) {
 }
 
 /**
+ * Check and display authentication status
+ */
+const checkAuthStatus = async () => {
+  try {
+    // Check if user has a cached Gmail token
+    const { gmailToken, gmailTokenExpiry } = await chrome.storage.local.get(['gmailToken', 'gmailTokenExpiry']);
+
+    if (gmailToken && gmailTokenExpiry && Date.now() < gmailTokenExpiry) {
+      // Try to get user info from Google
+      try {
+        const response = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${gmailToken}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.email) {
+            document.getElementById('userEmail').textContent = data.email;
+            document.getElementById('userEmail').style.color = '#059669';
+            document.getElementById('whitelistStatus').textContent = 'Will be checked on first generation';
+            document.getElementById('whitelistStatus').style.color = '#6b7280';
+            document.getElementById('authMessage').textContent = 'You are signed in. Access will be verified when you generate an email.';
+            return;
+          }
+        }
+      } catch (e) {
+        console.log('Could not verify token:', e);
+      }
+    }
+
+    // Not signed in or token expired
+    document.getElementById('userEmail').textContent = 'Not signed in';
+    document.getElementById('userEmail').style.color = '#6b7280';
+    document.getElementById('whitelistStatus').textContent = 'Sign in required';
+    document.getElementById('whitelistStatus').style.color = '#6b7280';
+    document.getElementById('authMessage').textContent = "You'll be prompted to sign in with Google when you generate your first email.";
+  } catch (error) {
+    console.error('Error checking auth status:', error);
+  }
+};
+
+/**
  * Restores select box and checkbox state using the preferences stored in chrome.storage
  */
 const restoreOptions = () => {
   chrome.storage.local.get(
     {
       openAiApiKey: '',
-      anthropicApiKey: '',
       userContext: '',
       model: 'gpt-5.2',
       tone: 'Casual & Friendly',
@@ -107,9 +144,6 @@ const restoreOptions = () => {
     },
     (items) => {
       document.getElementById('apiKey').value = items.openAiApiKey;
-      if (items.anthropicApiKey) {
-        document.getElementById('anthropicApiKey').value = items.anthropicApiKey;
-      }
       document.getElementById('userContext').value = items.userContext;
       document.getElementById('tone').value = items.tone;
       document.getElementById('exampleEmail').value = items.exampleEmail;
@@ -134,6 +168,9 @@ const restoreOptions = () => {
         document.getElementById('customModel').value = items.model;
         document.getElementById('customModel').style.display = 'block';
       }
+
+      // Check authentication status
+      checkAuthStatus();
     }
   );
 };
