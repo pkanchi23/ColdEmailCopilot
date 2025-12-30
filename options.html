@@ -152,6 +152,12 @@
     </div>
     <p class="info" style="margin-top: -10px;">⚠️ Claude/Anthropic only. Uses web search to find recent news (e.g., funding rounds, portfolio companies) to include in emails when relevant.</p>
 
+    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+      <input type="checkbox" id="darkMode" style="width: 18px; height: 18px;">
+      <label for="darkMode" style="margin-bottom: 0; cursor: pointer;">🌙 Dark Mode</label>
+    </div>
+    <p class="info" style="margin-top: -10px;">Enable dark theme for the extension interface.</p>
+
     <div class="form-group" style="margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
       <label for="apiKey">OpenAI API Key</label>
       <input type="password" id="apiKey" placeholder="sk-...">
@@ -161,6 +167,35 @@
       <label for="anthropicApiKey">Claude API Key (Anthropic)</label>
       <input type="password" id="anthropicApiKey" placeholder="sk-ant-...">
       <p class="info">Keys are stored locally on your device.</p>
+    </div>
+
+    <!-- Developer Settings -->
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+      <details>
+        <summary style="cursor: pointer; font-weight: 600; color: #374151; margin-bottom: 15px; user-select: none;">
+          Developer Settings ⚙️
+        </summary>
+
+        <div class="form-group">
+          <label for="webhookUrl">Webhook URL (Optional)</label>
+          <input type="url" id="webhookUrl" placeholder="https://your-webhook.com/endpoint" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; box-sizing: border-box;">
+          <p class="info">Send generated emails to a webhook for logging/analytics.</p>
+        </div>
+
+        <div class="form-group" style="margin-top: 20px;">
+          <label style="display: block; margin-bottom: 10px; font-weight: 500;">Backup & Restore</label>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="exportSettings" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+              Export Settings
+            </button>
+            <button type="button" id="importSettings" style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+              Import Settings
+            </button>
+          </div>
+          <input type="file" id="importFile" accept=".json" style="display: none;">
+          <p class="info">Export your settings to backup or import previously saved settings.</p>
+        </div>
+      </details>
     </div>
 
     <button id="save">Save Settings</button>
@@ -312,6 +347,7 @@ OUTPUT REQUIREMENTS
       background-color: #059669;
     }
   </style>
+  <script src="utils.js"></script>
   <script src="options.js"></script>
 </body>
 
