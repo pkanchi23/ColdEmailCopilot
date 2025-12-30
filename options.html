@@ -158,15 +158,28 @@
     </div>
     <p class="info" style="margin-top: -10px;">Enable dark theme for the extension interface.</p>
 
+    <!-- Authentication Status -->
     <div class="form-group" style="margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-      <label for="apiKey">OpenAI API Key</label>
-      <input type="password" id="apiKey" placeholder="sk-...">
+      <label>Authentication Status</label>
+      <div id="authStatus" style="padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+        <div style="margin-bottom: 8px;">
+          <strong>Gmail Account:</strong> <span id="userEmail" style="color: #6b7280;">Not signed in</span>
+        </div>
+        <div style="margin-bottom: 8px;">
+          <strong>Access Status:</strong> <span id="whitelistStatus" style="color: #6b7280;">Unknown</span>
+        </div>
+        <div id="authMessage" class="info" style="margin-top: 10px;">
+          You'll be prompted to sign in with Google when you generate your first email.
+        </div>
+      </div>
+      <p class="info" style="margin-top: 8px;">Claude models use centralized authentication. Contact your administrator if you need access.</p>
     </div>
 
+    <!-- OpenAI API Key (Optional) -->
     <div class="form-group">
-      <label for="anthropicApiKey">Claude API Key (Anthropic)</label>
-      <input type="password" id="anthropicApiKey" placeholder="sk-ant-...">
-      <p class="info">Keys are stored locally on your device.</p>
+      <label for="apiKey">OpenAI API Key (Optional)</label>
+      <input type="password" id="apiKey" placeholder="sk-...">
+      <p class="info">Only required if you want to use GPT models. Claude models use the centralized proxy.</p>
     </div>
 
     <!-- Developer Settings -->
