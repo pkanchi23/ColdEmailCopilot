@@ -13,7 +13,8 @@
   "oauth2": {
     "client_id": "799846906088-n98o6ucqurtqutv53d8p1kefi7vpupr4.apps.googleusercontent.com",
     "scopes": [
-      "https://www.googleapis.com/auth/gmail.compose"
+      "https://www.googleapis.com/auth/gmail.compose",
+      "https://www.googleapis.com/auth/userinfo.email"
     ]
   },
   "host_permissions": [

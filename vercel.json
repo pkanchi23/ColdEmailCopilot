@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "env": {
-    "ANTHROPIC_API_KEY": "@anthropic-api-key"
-  },
   "functions": {
     "api/**/*.js": {
       "memory": 1024,

@@ -682,6 +682,7 @@ const runGeneration = async (instructions = '', senderName = null, includeQuesti
         });
 
         if (response && response.error) {
+            console.error('[ColdEmailCopilot] API Error:', response.error);
             showError('API_ERROR', response.error);
         }
     } catch (e) {
@@ -774,9 +775,10 @@ const showError = (type, message) => {
     if (type === 'SCRAPE_FAILED') {
         errorMsg = 'Could not read profile data. Try refreshing the page.';
     } else if (type === 'API_ERROR') {
-        errorMsg = `API error: ${message}. Please check your API key in settings.`;
+        // Show the direct message from the API (which now contains detailed auth info)
+        errorMsg = `API Error: ${message}`;
     } else if (type === 'GENERATION_FAILED') {
-        errorMsg = `Failed to generate email: ${message}. Please reload the page and try again.`;
+        errorMsg = `Failed to generate email: ${message}.`;
     }
 
     showToast(errorMsg, 'error', 8000);
@@ -1333,12 +1335,12 @@ window.addEventListener('popstate', detectUrlChange);
 const originalPushState = history.pushState;
 const originalReplaceState = history.replaceState;
 
-history.pushState = function(...args) {
+history.pushState = function (...args) {
     originalPushState.apply(this, args);
     detectUrlChange();
 };
 
-history.replaceState = function(...args) {
+history.replaceState = function (...args) {
     originalReplaceState.apply(this, args);
     detectUrlChange();
 };

@@ -11,11 +11,14 @@
 // Add authorized email addresses here
 const WHITELIST = [
   'example@gmail.com',
+  'pranavkanchi23@gmail.com',
+  'ethanchoi88@gmail.com',
+  'govind25kanchi@gmail.com'
   // Add more emails here as needed
 ];
 
 // Enable/disable debug logging
-const DEBUG = process.env.DEBUG === 'true';
+const DEBUG = true; // process.env.DEBUG === 'true';
 
 /**
  * Verify Google OAuth token and extract email
@@ -151,9 +154,10 @@ export default async function handler(req, res) {
 
     if (!anthropicResponse.ok) {
       console.error('Anthropic API error:', anthropicData);
-      return res.status(anthropicResponse.status).json({
-        error: 'Anthropic API error',
-        message: anthropicData.error?.message || 'Unknown error',
+      // Return 502 Bad Gateway for upstream errors so client doesn't clear its own auth token
+      return res.status(502).json({
+        error: 'Upstream API Error',
+        message: `Anthropic API refused the request: ${anthropicData.error?.message || 'Unknown error'}`,
         details: anthropicData
       });
     }
