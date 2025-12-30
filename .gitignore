@@ -86,3 +86,4 @@ typings/
 extension-key.pem
 get-extension-id.js
 .vercel
+*.sh
