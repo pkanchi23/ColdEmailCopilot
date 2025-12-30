@@ -1,4 +1,25 @@
-// Saves options to chrome.storage
+/**
+ * Initialize logger
+ */
+(async () => {
+  await Logger.init();
+})();
+
+/**
+ * Apply or remove dark mode class
+ * @param {boolean} enabled - Whether dark mode is enabled
+ */
+function applyDarkMode(enabled) {
+  if (enabled) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+}
+
+/**
+ * Saves options to chrome.storage
+ */
 const saveOptions = () => {
   const apiKey = document.getElementById('apiKey').value;
   const anthropicApiKey = document.getElementById('anthropicApiKey').value;
@@ -11,6 +32,8 @@ const saveOptions = () => {
   const financeRecruitingMode = document.getElementById('financeRecruitingMode').checked;
   const debugMode = document.getElementById('debugMode').checked;
   const webGrounding = document.getElementById('webGrounding').checked;
+  const darkMode = document.getElementById('darkMode').checked;
+  const webhookUrl = document.getElementById('webhookUrl').value;
 
   if (!apiKey && !anthropicApiKey) {
     showStatus('Please enter at least one API Key.', 'error');
@@ -19,6 +42,12 @@ const saveOptions = () => {
 
   if (modelSelect === 'custom' && !customModel) {
     showStatus('Please enter a custom model name.', 'error');
+    return;
+  }
+
+  // Validate webhook URL if provided
+  if (webhookUrl && !isValidUrl(webhookUrl)) {
+    showStatus('Invalid webhook URL format.', 'error');
     return;
   }
 
@@ -32,16 +61,35 @@ const saveOptions = () => {
       exampleEmail: exampleEmail,
       financeRecruitingMode: financeRecruitingMode,
       debugMode: debugMode,
-      webGrounding: webGrounding
+      webGrounding: webGrounding,
+      darkMode: darkMode,
+      webhookUrl: webhookUrl
     },
     () => {
       showStatus('Settings saved successfully!', 'success');
+      // Reinitialize logger with new debug mode
+      Logger.init();
+      // Apply dark mode
+      applyDarkMode(darkMode);
     }
   );
 };
 
-// Restores select box and checkbox state using the preferences
-// stored in chrome.storage.
+/**
+ * Validate URL format
+ */
+function isValidUrl(string) {
+  try {
+    const url = new URL(string);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Restores select box and checkbox state using the preferences stored in chrome.storage
+ */
 const restoreOptions = () => {
   chrome.storage.local.get(
     {
@@ -53,7 +101,9 @@ const restoreOptions = () => {
       exampleEmail: '',
       financeRecruitingMode: false,
       debugMode: false,
-      webGrounding: false
+      webGrounding: false,
+      darkMode: false,
+      webhookUrl: ''
     },
     (items) => {
       document.getElementById('apiKey').value = items.openAiApiKey;
@@ -66,6 +116,11 @@ const restoreOptions = () => {
       document.getElementById('financeRecruitingMode').checked = items.financeRecruitingMode;
       document.getElementById('debugMode').checked = items.debugMode;
       document.getElementById('webGrounding').checked = items.webGrounding;
+      document.getElementById('darkMode').checked = items.darkMode;
+      document.getElementById('webhookUrl').value = items.webhookUrl || '';
+
+      // Apply dark mode on load
+      applyDarkMode(items.darkMode);
 
       // Check if saved model is in the dropdown
       const modelSelect = document.getElementById('model');
@@ -145,9 +200,64 @@ const setupHelperModal = () => {
   }
 }
 
+/**
+ * Export settings handler
+ */
+const handleExportSettings = async () => {
+  try {
+    const settings = await exportSettings();
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `coldemailcopilot-settings-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('Settings exported successfully!', 'success');
+  } catch (error) {
+    showStatus('Failed to export settings: ' + error.message, 'error');
+    Logger.error('Export failed:', error);
+  }
+};
+
+/**
+ * Import settings handler
+ */
+const handleImportSettings = () => {
+  document.getElementById('importFile').click();
+};
+
+/**
+ * Process imported file
+ */
+const processImportFile = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const settings = JSON.parse(text);
+    await importSettings(settings);
+    showStatus('Settings imported successfully! Reloading...', 'success');
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+  } catch (error) {
+    showStatus('Failed to import settings: ' + error.message, 'error');
+    Logger.error('Import failed:', error);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   setupModelSelect();
   setupHelperModal();
+
+  // Export/Import handlers
+  document.getElementById('exportSettings').addEventListener('click', handleExportSettings);
+  document.getElementById('importSettings').addEventListener('click', handleImportSettings);
+  document.getElementById('importFile').addEventListener('change', processImportFile);
 });
 document.getElementById('save').addEventListener('click', saveOptions);

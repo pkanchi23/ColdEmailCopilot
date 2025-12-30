@@ -1,4 +1,27 @@
+/**
+ * Import utilities for service worker
+ */
+importScripts('utils.js');
+
+/**
+ * Initialize rate limiter - 10 requests per minute
+ */
+const apiRateLimiter = new RateLimiter(10, 60000);
+
+/**
+ * Initialize logger
+ */
+(async () => {
+  await Logger.init();
+})();
+
 // --- Web Grounding Helper ---
+/**
+ * Perform web search to find recent news about profile
+ * @param {Object} profileData - LinkedIn profile data
+ * @param {string} anthropicApiKey - Anthropic API key
+ * @returns {Promise<string|null>} Recent news or null
+ */
 async function performWebSearch(profileData, anthropicApiKey) {
     // Construct search query based on profile
     const company = profileData.experience?.split('\n')[0]?.split(' at ')[1]?.split('(')[0]?.trim();
@@ -11,7 +34,10 @@ async function performWebSearch(profileData, anthropicApiKey) {
     const searchQuery = `${name} ${company} news recent funding portfolio`;
 
     try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        // Check rate limit
+        await apiRateLimiter.checkLimit();
+
+        const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
                 'x-api-key': anthropicApiKey,
@@ -30,11 +56,11 @@ async function performWebSearch(profileData, anthropicApiKey) {
                     type: 'web_search_20241101'
                 }]
             })
-        });
+        }, 30000);
 
         const data = await response.json();
         if (data.error) {
-            console.error('Web search error:', data.error);
+            Logger.error('Web search error:', data.error);
             return null;
         }
 
@@ -48,23 +74,41 @@ async function performWebSearch(profileData, anthropicApiKey) {
 
         return textContent;
     } catch (error) {
-        console.error('Web search failed:', error);
+        Logger.error('Web search failed:', error);
         return null;
     }
 }
 
+/**
+ * Message listener for extension communication
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'generateDraft') {
         handleGenerateDraft(request.data)
             .then(sendResponse)
-            .catch((error) => sendResponse({ success: false, error: error.message }));
+            .catch((error) => {
+                Logger.error('Generation failed:', error);
+                const userMessage = formatErrorMessage(error);
+                sendResponse({ success: false, error: userMessage });
+            });
         return true; // Will respond asynchronously
     }
 });
 
+/**
+ * Handle draft generation request
+ * @param {Object} requestData - Request data containing profile and settings
+ * @returns {Promise<Object>} Generation result
+ */
 async function handleGenerateDraft(requestData) {
     try {
-        const profileData = requestData.profile;
+        // Check online status
+        requireOnline();
+
+        // Check rate limit
+        await apiRateLimiter.checkLimit();
+
+        let profileData = requestData.profile;
         const specialInstructions = requestData.instructions || '';
         let dynamicSenderName = requestData.senderName;
         const includeQuestions = requestData.includeQuestions || false;
@@ -82,6 +126,15 @@ async function handleGenerateDraft(requestData) {
             debugMode = false
         } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
 
+        // Token counting and truncation to prevent exceeding model limits
+        const originalTokens = estimateTokens(JSON.stringify(profileData));
+        if (originalTokens > 3000) {
+            Logger.warn(`Profile data has ${originalTokens} tokens, truncating to fit within limits`);
+            profileData = truncateToTokenLimit(profileData, 3000);
+        } else {
+            Logger.log(`Profile data tokens: ${originalTokens}`);
+        }
+
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
         if (!openAiApiKey && !anthropicApiKey) {
@@ -90,13 +143,13 @@ async function handleGenerateDraft(requestData) {
 
         // Debug mode logging
         if (debugMode) {
-            console.log('=== DEBUG MODE ===');
-            console.log('Profile Data:', profileData);
-            console.log('Sender Name:', finalSenderName);
-            console.log('User Context:', userContext);
-            console.log('Model:', model);
-            console.log('Tone:', tone);
-            console.log('Finance Mode:', financeRecruitingMode);
+            Logger.log('=== DEBUG MODE ===');
+            Logger.log('Profile Data:', profileData);
+            Logger.log('Sender Name:', finalSenderName);
+            Logger.log('User Context:', userContext);
+            Logger.log('Model:', model);
+            Logger.log('Tone:', tone);
+            Logger.log('Finance Mode:', financeRecruitingMode);
         }
 
         // Extract first name for signature
@@ -106,11 +159,11 @@ async function handleGenerateDraft(requestData) {
         let webGroundingContext = null;
         if (useWebGrounding && model.startsWith('claude-') && anthropicApiKey) {
             if (debugMode) {
-                console.log('=== WEB GROUNDING ENABLED ===');
+                Logger.log('=== WEB GROUNDING ENABLED ===');
             }
             webGroundingContext = await performWebSearch(profileData, anthropicApiKey);
             if (debugMode && webGroundingContext) {
-                console.log('Web Grounding Result:', webGroundingContext);
+                Logger.log('Web Grounding Result:', webGroundingContext);
             }
         }
 
@@ -137,20 +190,21 @@ async function handleGenerateDraft(requestData) {
             if (emailPatternCache[cacheKey] && emailPatternCache[cacheKey].expiresAt > Date.now()) {
                 cachedPattern = emailPatternCache[cacheKey];
                 if (debugMode) {
-                    console.log('=== CACHED PATTERN FOUND ===');
-                    console.log('Company:', cachedPattern.company);
-                    console.log('Role:', cachedPattern.role);
-                    console.log('Cached Subject:', cachedPattern.subject);
+                    Logger.log('=== CACHED PATTERN FOUND ===');
+                    Logger.log('Company:', cachedPattern.company);
+                    Logger.log('Role:', cachedPattern.role);
+                    Logger.log('Cached Subject:', cachedPattern.subject);
                 }
             }
         }
 
         // Shared question formatting rules (used by both modes)
-        const questionFormattingRules = `QUESTION FORMAT: Compact numbered list with NO blank lines between items. Format as:
+        const questionFormattingRules = `QUESTION FORMAT: Write intro line, then IMMEDIATELY start numbered list on the NEXT line with NO blank line. Each question on its own line with NO blank lines between questions. Correct format:
 Two things I'm curious about:
 1. First question here...
 2. Second question here...
-NOT:
+
+WRONG (do NOT do this):
 Two things I'm curious about:
 
 1. First question...
@@ -232,6 +286,8 @@ Two things I'm curious about:
       8. Questions under 25 words. Cut context, keep question.
       9. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
       10. FORBIDDEN: "buyside", "sellside", "sell-side", "buy-side". Use specific terms.
+      11. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
+      12. NO SPECIAL CHARACTERS: Never use arrows (→), bullets (•), em-dashes (—), or Unicode symbols. Use only standard ASCII: hyphens (-), asterisks (*), regular quotes.
 
       RECIPIENT:
       Name: ${profileData.name}
@@ -271,8 +327,10 @@ Two things I'm curious about:
 
       CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
 
+      ${!includeQuestions ? 'CRITICAL: Do NOT include questions in this email. Skip questions entirely and go straight to asking for a quick call.' : ''}
+
       ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
-      ${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
+      ${exampleEmail ? `STYLE REF (for tone/style only, NOT structure): ${exampleEmail}${!includeQuestions ? ' - NOTE: Do NOT copy questions from this example. This email should NOT include questions.' : ''}` : ''}
 
       WARM CONNECTION: If known (mentor/colleague/met), reconnect naturally. Don't explain relationship.
 
@@ -304,15 +362,15 @@ Two things I'm curious about:
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
       SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
+      FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
     `;
 
         // Debug logging for prompt
         if (debugMode) {
-            console.log('=== FULL PROMPT ===');
-            console.log(prompt);
-            console.log('==================');
+            Logger.log('=== FULL PROMPT ===');
+            Logger.log(prompt);
+            Logger.log('==================');
         }
 
         let content;
@@ -338,8 +396,12 @@ CRITICAL RULES:
 9. Questions reveal deep thought. Show analytical thinking, not surface curiosity.
 10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
 11. FORMATTING: Keep paragraphs SHORT (2-3 sentences max). Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - let each paragraph flow naturally as a single block of text. Do not insert line breaks in the middle of sentences.
+12. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
+13. NO SPECIAL CHARACTERS: Never use arrows (→), bullets (•), em-dashes (—), or Unicode symbols. Use only standard ASCII: hyphens (-), asterisks (*), regular quotes.
 
 CTA: ALWAYS ask for quick call. NEVER offer coffee or specify duration.
+
+${!includeQuestions ? 'CRITICAL: Do NOT include questions in this email. Skip questions entirely and go straight to asking for a quick call.' : ''}
 
 WARM CONNECTION: If known (mentor/colleague/met), reconnect naturally. Don't explain relationship.
 
@@ -371,7 +433,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
 SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
-FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - each paragraph should flow as continuous text without mid-sentence line breaks. Standard ASCII only - NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. JSON: {"subject": "...", "body": "..."}
+FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
 
             const dynamicContent = `RECIPIENT:
@@ -414,7 +476,7 @@ ${specialInstructions ? `SPECIAL: ${specialInstructions}` : ''}
 ${exampleEmail ? `STYLE REF: ${exampleEmail}` : ''}
 ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPattern.company}):\nSubject: ${cachedPattern.subject}\nBody (adapt, don't copy): ${cachedPattern.body.substring(0, 200)}...` : ''}`;
 
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: {
                     'x-api-key': anthropicApiKey,
@@ -453,7 +515,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                 throw new Error('OpenAI API Key missing. Please set it in options.');
             }
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${openAiApiKey}`,
@@ -484,7 +546,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             }
             emailDraft = JSON.parse(cleanContent);
         } catch (e) {
-            console.warn('JSON parsing failed, using raw content:', e);
+            Logger.warn('JSON parsing failed, using raw content:', e);
             emailDraft = { subject: "Intro", body: content };
         }
 
@@ -500,10 +562,10 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // Debug logging for generated draft
         if (debugMode) {
-            console.log('=== GENERATED DRAFT ===');
-            console.log('Subject:', emailDraft.subject);
-            console.log('Body:', emailDraft.body);
-            console.log('====================');
+            Logger.log('=== GENERATED DRAFT ===');
+            Logger.log('Subject:', emailDraft.subject);
+            Logger.log('Body:', emailDraft.body);
+            Logger.log('====================');
         }
 
         // --- EMAIL PREDICTION LOGIC ---
@@ -1359,7 +1421,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             try {
                 const experienceParts = profileData.experience.split('\n')[0].split(' at ');
                 if (experienceParts.length < 2) {
-                    console.log('Cannot parse company from experience');
+                    Logger.log('Cannot parse company from experience');
                 } else {
                     const currentCompany = experienceParts[1].split('(')[0].trim();
 
@@ -1379,33 +1441,49 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                         const companyMatch = bestMatch;
 
                         if (companyMatch) {
-                            const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.'));
+                            // Sanitize name to handle special characters and diacritics
+                            const sanitizedName = sanitizeForEmail(profileData.name);
+                            const nameParts = sanitizedName.split(' ').filter(p => p.length > 0 && !p.includes('.'));
+
                             if (nameParts.length >= 2) {
-                                const first = nameParts[0].replace(/[^a-z]/g, '');
-                                const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
+                                const first = nameParts[0];
+                                const last = nameParts[nameParts.length - 1];
 
                                 if (first.length > 0 && last.length > 0) {
                                     // Generate primary email
                                     const primaryEmail = parseEmailFormat(companyMatch.format, first, last);
+
+                                    // Validate the generated email
                                     if (primaryEmail) {
-                                        predictedEmail = primaryEmail;
+                                        const validation = validateEmailPrediction(primaryEmail, profileData.name);
+                                        if (validation.valid) {
+                                            predictedEmail = primaryEmail;
+                                        } else {
+                                            Logger.warn(`Email prediction validation failed: ${validation.reason}`);
+                                            Logger.warn(`Generated: ${primaryEmail}, Name: ${profileData.name}`);
+                                        }
                                     }
 
                                     // Generate alternative email for BCC
                                     if (companyMatch.alt) {
                                         const altEmail = parseEmailFormat(companyMatch.alt, first, last);
                                         if (altEmail) {
-                                            predictedBcc = altEmail;
+                                            const altValidation = validateEmailPrediction(altEmail, profileData.name);
+                                            if (altValidation.valid) {
+                                                predictedBcc = altEmail;
+                                            } else {
+                                                Logger.warn(`BCC email validation failed: ${altValidation.reason}`);
+                                            }
                                         }
                                     }
 
                                     if (debugMode) {
-                                        console.log('=== EMAIL PREDICTION ===');
-                                        console.log('Profile company:', currentCompany);
-                                        console.log('Matched to:', companyMatch.company);
-                                        console.log('Match score:', bestScore);
-                                        console.log('Primary:', predictedEmail);
-                                        console.log('BCC:', predictedBcc);
+                                        Logger.log('=== EMAIL PREDICTION ===');
+                                        Logger.log('Profile company:', currentCompany);
+                                        Logger.log('Matched to:', companyMatch.company);
+                                        Logger.log('Match score:', bestScore);
+                                        Logger.log('Primary:', predictedEmail);
+                                        Logger.log('BCC:', predictedBcc);
                                     }
                                 }
                             }
@@ -1413,7 +1491,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                     }
                 }
             } catch (err) {
-                console.log('Email prediction failed:', err);
+                Logger.log('Email prediction failed:', err);
             }
         }
 
@@ -1444,6 +1522,46 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             }
         });
 
+        // Send webhook notification if configured
+        const { webhookUrl } = await chrome.storage.local.get('webhookUrl');
+        if (webhookUrl) {
+            try {
+                const webhookPayload = {
+                    event: 'email_generated',
+                    timestamp: new Date().toISOString(),
+                    data: {
+                        subject: emailDraft.subject,
+                        body: emailDraft.body,
+                        recipient: {
+                            name: profileData.name,
+                            headline: profileData.headline,
+                            email: predictedEmail || null,
+                            profileUrl: profileData.url || null
+                        },
+                        metadata: {
+                            tone: settings.tone,
+                            model: settings.model,
+                            includeQuestions: includeQuestions,
+                            financeMode: settings.financeRecruitingMode
+                        }
+                    }
+                };
+
+                await fetchWithTimeout(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(webhookPayload)
+                }, 10000); // 10s timeout for webhook
+
+                Logger.log('Webhook notification sent successfully');
+            } catch (webhookError) {
+                // Log error but don't fail the email generation
+                Logger.error('Webhook notification failed:', webhookError);
+            }
+        }
+
         // Smart caching: Save successful email pattern by company+role
         if (companyRole) {
             const cacheKey = `email_cache_${companyRole.company}_${companyRole.role}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
@@ -1470,11 +1588,11 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
         // --- GMAIL API INTEGRATION ---
         if (debugMode) {
-            console.log('=== DEBUG MODE: Creating Gmail Draft ===');
-            console.log('To:', predictedEmail || '(no recipient)');
-            console.log('Subject:', emailDraft.subject);
-            console.log('Body:', emailDraft.body);
-            console.log('=== Proceeding with draft creation ===');
+            Logger.log('=== DEBUG MODE: Creating Gmail Draft ===');
+            Logger.log('To:', predictedEmail || '(no recipient)');
+            Logger.log('Subject:', emailDraft.subject);
+            Logger.log('Body:', emailDraft.body);
+            Logger.log('=== Proceeding with draft creation ===');
         }
 
         const token = await getAuthToken();
@@ -1487,7 +1605,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
         return { success: true };
 
     } catch (err) {
-        console.error('Error generating draft:', err);
+        Logger.error('Error generating draft:', err);
         return { success: false, error: err.message };
     }
 }
@@ -1497,11 +1615,11 @@ async function getAuthToken() {
     const { gmailToken, gmailTokenExpiry } = await chrome.storage.local.get(['gmailToken', 'gmailTokenExpiry']);
 
     if (gmailToken && gmailTokenExpiry && Date.now() < gmailTokenExpiry) {
-        console.log('Using cached Gmail token');
+        Logger.log('Using cached Gmail token');
         return gmailToken;
     }
 
-    console.log('Fetching new Gmail token...');
+    Logger.log('Fetching new Gmail token...');
 
     // Show OAuth notification to user
     try {
@@ -1510,7 +1628,7 @@ async function getAuthToken() {
             chrome.tabs.sendMessage(tabs[0].id, { action: 'showOAuthNotification' }).catch(() => { });
         }
     } catch (e) {
-        console.log('Could not show OAuth notification:', e);
+        Logger.log('Could not show OAuth notification:', e);
     }
 
     return new Promise((resolve, reject) => {
@@ -1535,7 +1653,7 @@ async function getAuthToken() {
                         chrome.tabs.sendMessage(tab.id, { action: 'hideOAuthNotification' }).catch(() => { });
                     });
                 } catch (e) {
-                    console.log('Could not hide OAuth notification:', e);
+                    Logger.log('Could not hide OAuth notification:', e);
                 }
 
                 if (chrome.runtime.lastError) {
@@ -1593,7 +1711,7 @@ function createMimeMessage(subject, body, toEmail, bccEmail) {
 
 
 async function createDraft(token, rawMessage) {
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
+    const response = await fetchWithTimeout('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,

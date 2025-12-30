@@ -1,10 +1,19 @@
 // ==========================
+// INITIALIZE LOGGER
+// ==========================
+
+// Initialize logger with debug mode
+(async () => {
+    await Logger.init();
+})();
+
+// ==========================
 // CONFIGURATION & STATE
 // ==========================
 
 const CONFIG = {
     CACHE_TTL: 5 * 60 * 1000, // 5 minutes
-    DEBOUNCE_DELAY: 200, // ms - reduced for faster response
+    DEBOUNCE_DELAY: 500, // ms - increased to reduce excessive DOM checks
     MAX_EXPERIENCES: 20, // Increased from 5 to capture full career history
     MAX_EDUCATION: 10, // Increased from 2 to capture all education
     MAX_SKILLS: 50, // Increased from 10 to capture more skills
@@ -19,8 +28,9 @@ const CONFIG = {
     MAX_ORGANIZATIONS: 10,
     MAX_RECOMMENDATIONS: 5,
     MAX_FEATURED_ITEMS: 10,
-    BUTTON_INJECT_RETRY: 500, // ms - reduced for faster retries
-    INITIAL_DELAY: 100 // ms - small delay for DOM to settle
+    BUTTON_INJECT_RETRY: 2000, // ms - increased to reduce detection triggers
+    INITIAL_DELAY: 300, // ms - increased for better DOM stability
+    MAX_INJECT_ATTEMPTS: 20 // Stop polling after successful injection
 };
 
 // State
@@ -30,7 +40,9 @@ const state = {
     lastInjectedUrl: null,
     debounceTimer: null,
     intervalId: null,
-    observer: null
+    observer: null,
+    injectAttempts: 0,
+    stableInjection: false // Tracks if button has been stable for a while
 };
 
 // ==========================
@@ -51,7 +63,7 @@ const debounce = (func, wait) => {
 const getCachedProfile = (url) => {
     const cached = state.profileCache.get(url);
     if (cached && Date.now() - cached.timestamp < CONFIG.CACHE_TTL) {
-        console.log('ColdEmailCopilot: Using cached profile data');
+        Logger.log('ColdEmailCopilot: Using cached profile data');
         return cached.data;
     }
     return null;
@@ -118,7 +130,7 @@ const scrapeProfile = () => {
             }
         }
     } catch (e) {
-        console.log('ColdEmailCopilot: Error extracting location:', e);
+        Logger.log('ColdEmailCopilot: Error extracting location:', e);
     }
 
     // About
@@ -150,7 +162,7 @@ const scrapeProfile = () => {
                     experiences.push(expString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing experience item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing experience item:', e);
             }
         });
     }
@@ -185,7 +197,7 @@ const scrapeProfile = () => {
                     education.push(eduString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing education item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing education item:', e);
             }
         });
     }
@@ -206,7 +218,7 @@ const scrapeProfile = () => {
                     skills.push(skillName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing skill item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing skill item:', e);
             }
         });
     }
@@ -230,7 +242,7 @@ const scrapeProfile = () => {
                     languages.push(langString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing language item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing language item:', e);
             }
         });
     }
@@ -254,7 +266,7 @@ const scrapeProfile = () => {
                     certifications.push(certString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing certification item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing certification item:', e);
             }
         });
     }
@@ -277,7 +289,7 @@ const scrapeProfile = () => {
                     volunteer.push(`${role} at ${organization}`);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing volunteer item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing volunteer item:', e);
             }
         });
     }
@@ -301,7 +313,7 @@ const scrapeProfile = () => {
                     awards.push(awardString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing award item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing award item:', e);
             }
         });
     }
@@ -322,7 +334,7 @@ const scrapeProfile = () => {
                     projects.push(projectName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing project item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing project item:', e);
             }
         });
     }
@@ -346,7 +358,7 @@ const scrapeProfile = () => {
                     publications.push(pubString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing publication item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing publication item:', e);
             }
         });
     }
@@ -367,7 +379,7 @@ const scrapeProfile = () => {
                     courses.push(courseName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing course item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing course item:', e);
             }
         });
     }
@@ -389,7 +401,7 @@ const scrapeProfile = () => {
                     testScores.push(testString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing test score item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing test score item:', e);
             }
         });
     }
@@ -413,7 +425,7 @@ const scrapeProfile = () => {
                     patents.push(patentString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing patent item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing patent item:', e);
             }
         });
     }
@@ -437,7 +449,7 @@ const scrapeProfile = () => {
                     organizations.push(orgString);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing organization item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing organization item:', e);
             }
         });
     }
@@ -460,7 +472,7 @@ const scrapeProfile = () => {
                     recommendations.push(`${recommender}: "${text.substring(0, 150)}${text.length > 150 ? '...' : ''}"`);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing recommendation item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing recommendation item:', e);
             }
         });
     }
@@ -481,7 +493,7 @@ const scrapeProfile = () => {
                     featured.push(title);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing featured item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing featured item:', e);
             }
         });
     }
@@ -500,7 +512,7 @@ const scrapeProfile = () => {
                     interests.push(interestName);
                 }
             } catch (e) {
-                console.log('ColdEmailCopilot: Error parsing interest item:', e);
+                Logger.log('ColdEmailCopilot: Error parsing interest item:', e);
             }
         });
     }
@@ -526,7 +538,7 @@ const scrapeProfile = () => {
             }
         });
     } catch (e) {
-        console.log('ColdEmailCopilot: Error parsing profile header stats:', e);
+        Logger.log('ColdEmailCopilot: Error parsing profile header stats:', e);
     }
 
     // Contact Information (visible if expanded)
@@ -562,7 +574,7 @@ const scrapeProfile = () => {
             contactBirthday = birthdayEl.innerText?.trim() || '';
         }
     } catch (e) {
-        console.log('ColdEmailCopilot: Error parsing contact info:', e);
+        Logger.log('ColdEmailCopilot: Error parsing contact info:', e);
     }
 
     // Recent Activity/Posts
@@ -583,12 +595,12 @@ const scrapeProfile = () => {
                         activityPosts.push(truncated + (postText.length > 200 ? '...' : ''));
                     }
                 } catch (e) {
-                    console.log('ColdEmailCopilot: Error parsing activity post:', e);
+                    Logger.log('ColdEmailCopilot: Error parsing activity post:', e);
                 }
             });
         }
     } catch (e) {
-        console.log('ColdEmailCopilot: Error parsing activity section:', e);
+        Logger.log('ColdEmailCopilot: Error parsing activity section:', e);
     }
 
     const profileData = {
@@ -625,7 +637,7 @@ const scrapeProfile = () => {
     // Validate
     const validation = validateProfileData(profileData);
     if (!validation.valid) {
-        console.warn('ColdEmailCopilot: Profile data validation warnings:', validation.errors);
+        Logger.warn('ColdEmailCopilot: Profile data validation warnings:', validation.errors);
     }
 
     // Cache the result
@@ -655,7 +667,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 const runGeneration = async (instructions = '', senderName = null, includeQuestions = false, useWebGrounding = false) => {
     const profileData = scrapeProfile();
-    console.log('ColdEmailCopilot: Scraped Data:', profileData);
+    Logger.log('ColdEmailCopilot: Scraped Data:', profileData);
 
     try {
         const response = await chrome.runtime.sendMessage({
@@ -673,7 +685,7 @@ const runGeneration = async (instructions = '', senderName = null, includeQuesti
             showError('API_ERROR', response.error);
         }
     } catch (e) {
-        console.error(e);
+        Logger.error(e);
         showError('GENERATION_FAILED', e.message);
     }
 };
@@ -729,10 +741,17 @@ const showToast = (message, type = 'info', duration = 5000) => {
         max-width: 500px;
     `;
 
-    toast.innerHTML = `
-        <span style="font-size: 18px;">${icon}</span>
-        <span>${message}</span>
-    `;
+    // Create icon span (XSS safe)
+    const iconSpan = document.createElement('span');
+    iconSpan.style.fontSize = '18px';
+    iconSpan.textContent = icon;
+
+    // Create message span (XSS safe)
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+
+    toast.appendChild(iconSpan);
+    toast.appendChild(messageSpan);
 
     document.body.appendChild(toast);
 
@@ -780,15 +799,35 @@ const showOAuthToast = () => {
         clearTimeout(oauthToastTimeout);
     }
 
-    // Create toast
+    // Create toast (XSS safe)
     oauthToast = document.createElement('div');
     oauthToast.className = 'cec-oauth-toast';
-    oauthToast.innerHTML = `
-        <svg class="spinner" viewBox="0 0 50 50">
-            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="31.4 31.4" stroke-linecap="round" style="animation: dash 1.5s ease-in-out infinite;"/>
-        </svg>
-        <span class="cec-oauth-toast-text">Please sign in to Gmail to continue...</span>
-    `;
+
+    // Create SVG spinner
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'spinner');
+    svg.setAttribute('viewBox', '0 0 50 50');
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', '25');
+    circle.setAttribute('cy', '25');
+    circle.setAttribute('r', '20');
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', 'currentColor');
+    circle.setAttribute('stroke-width', '5');
+    circle.setAttribute('stroke-dasharray', '31.4 31.4');
+    circle.setAttribute('stroke-linecap', 'round');
+    circle.style.animation = 'dash 1.5s ease-in-out infinite';
+
+    svg.appendChild(circle);
+
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.className = 'cec-oauth-toast-text';
+    textSpan.textContent = 'Please sign in to Gmail to continue...';
+
+    oauthToast.appendChild(svg);
+    oauthToast.appendChild(textSpan);
     document.body.appendChild(oauthToast);
 
     // Auto-hide after 30 seconds as fallback
@@ -951,7 +990,13 @@ const createSaveModal = async () => {
     overlay.className = 'cec-modal-overlay cec-save-modal-overlay';
 
     const hasLists = profileLists.length > 0;
-    let listOptionsHTML = profileLists.map(list => `<option value="${list}">${list}</option>`).join('');
+
+    // Build modal structure safely (XSS safe - escaping user list names)
+    let listOptionsHTML = profileLists.map(list => {
+        const escapedValue = escapeHtml(list);
+        const escapedText = escapeHtml(list);
+        return `<option value="${escapedValue}">${escapedText}</option>`;
+    }).join('');
 
     overlay.innerHTML = `
         <div class="cec-modal cec-save-modal">
@@ -1081,19 +1126,31 @@ const createButton = () => {
             if (result === null) return;
 
             setLoadingState(true);
-            // Add spinner to button
-            emailBtn.innerHTML = `
-                <svg class="cec-btn-spinner" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"/>
-                </svg>
-                Generating...
-            `;
+            // Add spinner to button (XSS safe)
+            emailBtn.textContent = '';
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'cec-btn-spinner');
+            svg.setAttribute('viewBox', '0 0 50 50');
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '25');
+            circle.setAttribute('cy', '25');
+            circle.setAttribute('r', '20');
+            circle.setAttribute('fill', 'none');
+            circle.setAttribute('stroke', 'currentColor');
+            circle.setAttribute('stroke-width', '5');
+
+            svg.appendChild(circle);
+            emailBtn.appendChild(svg);
+            emailBtn.appendChild(document.createTextNode(' Generating...'));
+
             emailBtn.disabled = true;
             emailBtn.style.opacity = '0.7';
 
             // Auto-recovery after 60 seconds
             generationTimeout = setTimeout(() => {
-                console.log('ColdEmailCopilot: Generation timeout, resetting button');
+                Logger.log('ColdEmailCopilot: Generation timeout, resetting button');
                 resetButton();
                 showToast('Generation timed out. Please try again.', 'error');
             }, 60000);
@@ -1104,7 +1161,7 @@ const createButton = () => {
 
             resetButton();
         } catch (err) {
-            console.error('ColdEmailCopilot: Button click error:', err);
+            Logger.error('ColdEmailCopilot: Button click error:', err);
             resetButton();
             showToast('An error occurred. Please try again.', 'error');
         }
@@ -1143,7 +1200,7 @@ const createButton = () => {
                 setTimeout(() => saveBtn.innerText = 'Save', 2000);
             }
         } catch (e) {
-            console.error('ColdEmailCopilot: Error saving profile:', e);
+            Logger.error('ColdEmailCopilot: Error saving profile:', e);
             saveBtn.innerText = 'Error';
         }
     });
@@ -1164,12 +1221,38 @@ const injectButton = () => {
             existingContainer.remove();
         }
         state.buttonInjected = false;
-        console.log('ColdEmailCopilot: URL changed, resetting button injection state');
+        state.stableInjection = false;
+        state.injectAttempts = 0;
+        Logger.log('ColdEmailCopilot: URL changed, resetting button injection state');
     }
     state.lastInjectedUrl = currentUrl;
 
+    // Don't inject if already stable
+    if (state.stableInjection) return;
+
     // Don't inject if already injected for this URL
-    if (state.buttonInjected) return;
+    if (state.buttonInjected) {
+        // Verify button still exists
+        const exists = document.querySelector('.cold-email-copilot-container');
+        if (exists) {
+            // Mark as stable after button has existed for a few checks
+            state.injectAttempts++;
+            if (state.injectAttempts >= CONFIG.MAX_INJECT_ATTEMPTS) {
+                state.stableInjection = true;
+                Logger.log('ColdEmailCopilot: Button injection stable, stopping polls');
+                // Stop interval to reduce detection
+                if (state.intervalId) {
+                    clearInterval(state.intervalId);
+                    state.intervalId = null;
+                }
+            }
+            return;
+        } else {
+            // Button was removed, reset
+            state.buttonInjected = false;
+            state.injectAttempts = 0;
+        }
+    }
 
     // Try to find action bar
     let actionPanel = null;
@@ -1194,8 +1277,9 @@ const injectButton = () => {
     if (actionPanel && !document.querySelector('.cold-email-copilot-container')) {
         const btnContainer = createButton();
         actionPanel.appendChild(btnContainer);
-        console.log('ColdEmailCopilot: Buttons injected successfully');
+        Logger.log('ColdEmailCopilot: Buttons injected successfully');
         state.buttonInjected = true;
+        state.injectAttempts = 0;
     }
 };
 
@@ -1225,7 +1309,7 @@ let lastUrl = window.location.href;
 const detectUrlChange = () => {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
-        console.log('ColdEmailCopilot: URL change detected', lastUrl, '->', currentUrl);
+        Logger.log('ColdEmailCopilot: URL change detected', lastUrl, '->', currentUrl);
         lastUrl = currentUrl;
 
         // Reset state for new page
@@ -1259,8 +1343,8 @@ history.replaceState = function(...args) {
     detectUrlChange();
 };
 
-// Method 3: Poll for URL changes as fallback
-setInterval(detectUrlChange, 1000);
+// Method 3: Poll for URL changes as fallback (less frequent)
+setInterval(detectUrlChange, 2000);
 
 // Wait for DOM to be ready before first injection attempt
 const initializeButtonInjection = () => {
@@ -1273,8 +1357,27 @@ const initializeButtonInjection = () => {
     const debouncedInject = debounce(injectButton, CONFIG.DEBOUNCE_DELAY);
 
     const observer = new MutationObserver((mutations) => {
-        // Always check for injection opportunities (don't stop after first injection)
-        debouncedInject();
+        // Skip if already stable
+        if (state.stableInjection) return;
+
+        // Only trigger on meaningful changes (added nodes in action areas)
+        const hasRelevantChanges = mutations.some(mutation => {
+            if (mutation.addedNodes.length === 0) return false;
+            // Check if changes are in areas we care about
+            return Array.from(mutation.addedNodes).some(node => {
+                if (node.nodeType !== Node.ELEMENT_NODE) return false;
+                const elem = node;
+                return elem.matches && (
+                    elem.matches('[class*="artdeco-button"]') ||
+                    elem.matches('[class*="scaffold-layout"]') ||
+                    elem.closest('[class*="profile"]')
+                );
+            });
+        });
+
+        if (hasRelevantChanges) {
+            debouncedInject();
+        }
     });
 
     observer.observe(document.body, {
@@ -1286,6 +1389,7 @@ const initializeButtonInjection = () => {
     state.observer = observer;
 
     // Continuous interval to catch any missed injection opportunities
+    // Will auto-stop once button is stable
     state.intervalId = setInterval(() => {
         injectButton();
     }, CONFIG.BUTTON_INJECT_RETRY);
