@@ -6,6 +6,18 @@
 })();
 
 /**
+ * Apply or remove dark mode class
+ * @param {boolean} enabled - Whether dark mode is enabled
+ */
+function applyDarkMode(enabled) {
+  if (enabled) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+}
+
+/**
  * Saves options to chrome.storage
  */
 const saveOptions = () => {
@@ -20,6 +32,7 @@ const saveOptions = () => {
   const financeRecruitingMode = document.getElementById('financeRecruitingMode').checked;
   const debugMode = document.getElementById('debugMode').checked;
   const webGrounding = document.getElementById('webGrounding').checked;
+  const darkMode = document.getElementById('darkMode').checked;
   const webhookUrl = document.getElementById('webhookUrl').value;
 
   if (!apiKey && !anthropicApiKey) {
@@ -49,12 +62,15 @@ const saveOptions = () => {
       financeRecruitingMode: financeRecruitingMode,
       debugMode: debugMode,
       webGrounding: webGrounding,
+      darkMode: darkMode,
       webhookUrl: webhookUrl
     },
     () => {
       showStatus('Settings saved successfully!', 'success');
       // Reinitialize logger with new debug mode
       Logger.init();
+      // Apply dark mode
+      applyDarkMode(darkMode);
     }
   );
 };
@@ -86,6 +102,7 @@ const restoreOptions = () => {
       financeRecruitingMode: false,
       debugMode: false,
       webGrounding: false,
+      darkMode: false,
       webhookUrl: ''
     },
     (items) => {
@@ -99,7 +116,11 @@ const restoreOptions = () => {
       document.getElementById('financeRecruitingMode').checked = items.financeRecruitingMode;
       document.getElementById('debugMode').checked = items.debugMode;
       document.getElementById('webGrounding').checked = items.webGrounding;
+      document.getElementById('darkMode').checked = items.darkMode;
       document.getElementById('webhookUrl').value = items.webhookUrl || '';
+
+      // Apply dark mode on load
+      applyDarkMode(items.darkMode);
 
       // Check if saved model is in the dropdown
       const modelSelect = document.getElementById('model');

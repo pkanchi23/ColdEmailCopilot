@@ -1,8 +1,14 @@
 /**
- * Initialize logger
+ * Initialize logger and dark mode
  */
 (async () => {
   await Logger.init();
+
+  // Apply dark mode if enabled
+  const { darkMode = false } = await chrome.storage.local.get('darkMode');
+  if (darkMode) {
+    document.body.classList.add('dark-mode');
+  }
 })();
 
 // ==========================
@@ -214,9 +220,36 @@ const loadSavedProfiles = async () => {
     filteredProfiles.slice().reverse().forEach((profile) => {
         const div = document.createElement('div');
         div.className = 'saved-item';
+
+        // Check profile staleness
+        const stalenessInfo = checkProfileStaleness(profile);
+        const stalenessClass = stalenessInfo.stale ? `stale-${stalenessInfo.severity}` : '';
+        if (stalenessClass) {
+            div.classList.add(stalenessClass);
+        }
+
+        // Build staleness badge HTML
+        let stalenessBadgeHTML = '';
+        if (stalenessInfo.stale || stalenessInfo.severity === 'info') {
+            const badgeIcons = {
+                'error': '⚠️',
+                'warning': '⏰',
+                'info': '📅'
+            };
+            const badgeColors = {
+                'error': '#ef4444',
+                'warning': '#f59e0b',
+                'info': '#6b7280'
+            };
+            const icon = badgeIcons[stalenessInfo.severity] || '📅';
+            const color = badgeColors[stalenessInfo.severity] || '#6b7280';
+            stalenessBadgeHTML = `<div class="staleness-badge" style="font-size: 10px; color: ${color}; margin-bottom: 4px;" title="${escapeHtml(stalenessInfo.message)}">${icon} ${escapeHtml(stalenessInfo.message)}</div>`;
+        }
+
         div.innerHTML = `
             <div class="saved-name">${escapeHtml(profile.name)}</div>
             <div class="saved-headline">${escapeHtml(profile.headline)}</div>
+            ${stalenessBadgeHTML}
             <div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px;">${escapeHtml(profile.list || 'Everyone')}</div>
             <div class="saved-actions">
                 <button class="visit-btn">Visit</button>

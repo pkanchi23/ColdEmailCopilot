@@ -239,6 +239,289 @@ async function importSettings(settings) {
   });
 }
 
+// ==========================
+// LOADING STATE UTILITIES
+// ==========================
+
+/**
+ * Create and show a loading spinner
+ * @param {HTMLElement} container - Container element
+ * @param {string} message - Loading message
+ * @returns {Function} Cleanup function to remove loader
+ */
+function showLoading(container, message = 'Loading...') {
+  const loader = createSafeElement('div', { className: 'loader-container' });
+
+  const spinner = createSafeElement('div', { className: 'spinner' });
+  const messageEl = createSafeElement('p', { text: message, className: 'loader-message' });
+
+  loader.appendChild(spinner);
+  loader.appendChild(messageEl);
+  container.appendChild(loader);
+
+  // Return cleanup function
+  return () => {
+    if (loader.parentNode) {
+      loader.remove();
+    }
+  };
+}
+
+/**
+ * Set button loading state
+ * @param {HTMLButtonElement} button - Button element
+ * @param {boolean} loading - Loading state
+ * @param {string} loadingText - Text to show while loading
+ */
+function setButtonLoading(button, loading, loadingText = 'Loading...') {
+  if (loading) {
+    button.dataset.originalText = button.textContent;
+    button.disabled = true;
+    button.classList.add('loading');
+    button.textContent = loadingText;
+  } else {
+    button.disabled = false;
+    button.classList.remove('loading');
+    button.textContent = button.dataset.originalText || button.textContent;
+    delete button.dataset.originalText;
+  }
+}
+
+// ==========================
+// TOKEN COUNTING
+// ==========================
+
+/**
+ * Estimate token count for text (rough approximation)
+ * @param {string} text - Text to estimate
+ * @returns {number} Estimated token count
+ */
+function estimateTokens(text) {
+  if (!text) return 0;
+  // Rough approximation: 1 token ≈ 4 characters for English
+  // More accurate would use tiktoken library, but this is sufficient
+  return Math.ceil(text.length / 4);
+}
+
+/**
+ * Truncate profile data to fit within token limit
+ * @param {Object} profileData - LinkedIn profile data
+ * @param {number} maxTokens - Maximum tokens allowed
+ * @returns {Object} Truncated profile data
+ */
+function truncateToTokenLimit(profileData, maxTokens = 3000) {
+  let data = { ...profileData };
+  let estimated = estimateTokens(JSON.stringify(data));
+
+  if (estimated <= maxTokens) {
+    return data;
+  }
+
+  Logger.warn(`Profile data exceeds ${maxTokens} tokens (${estimated}). Truncating...`);
+
+  // Truncate in priority order (keep most important, truncate least important)
+  const truncationSteps = [
+    () => {
+      // 1. Limit skills to top 20
+      if (data.skills && data.skills.length > 20) {
+        data.skills = data.skills.slice(0, 20);
+      }
+    },
+    () => {
+      // 2. Truncate recommendations
+      if (data.recommendations && data.recommendations.length > 500) {
+        data.recommendations = data.recommendations.slice(0, 500) + '...';
+      }
+    },
+    () => {
+      // 3. Limit experience to 1500 chars
+      if (data.experience && data.experience.length > 1500) {
+        data.experience = data.experience.slice(0, 1500) + '...';
+      }
+    },
+    () => {
+      // 4. Limit education to 800 chars
+      if (data.education && data.education.length > 800) {
+        data.education = data.education.slice(0, 800) + '...';
+      }
+    },
+    () => {
+      // 5. Remove recent activity
+      delete data.recentActivity;
+    },
+    () => {
+      // 6. Remove publications
+      delete data.publications;
+    },
+    () => {
+      // 7. Remove patents
+      delete data.patents;
+    },
+    () => {
+      // 8. Limit about to 300 chars
+      if (data.about && data.about.length > 300) {
+        data.about = data.about.slice(0, 300) + '...';
+      }
+    }
+  ];
+
+  for (const step of truncationSteps) {
+    step();
+    estimated = estimateTokens(JSON.stringify(data));
+    if (estimated <= maxTokens) {
+      Logger.log(`Truncated to ${estimated} tokens`);
+      return data;
+    }
+  }
+
+  Logger.warn(`Could not truncate below ${maxTokens} tokens. Final: ${estimated}`);
+  return data;
+}
+
+// ==========================
+// EMAIL VALIDATION
+// ==========================
+
+/**
+ * Validate email address format
+ * @param {string} email - Email address to validate
+ * @returns {boolean} True if valid
+ */
+function validateEmail(email) {
+  if (!email) return false;
+  const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
+  return emailRegex.test(email);
+}
+
+/**
+ * Sanitize name for email address (remove diacritics, special chars)
+ * @param {string} name - Name to sanitize
+ * @returns {string} Sanitized name
+ */
+function sanitizeForEmail(name) {
+  if (!name) return '';
+
+  return name
+    .normalize('NFD') // Decompose combined characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics (é → e)
+    .replace(/[^a-z\s-]/gi, '') // Keep only letters, spaces, hyphens
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Validate domain exists (basic check)
+ * @param {string} domain - Domain to check
+ * @returns {boolean} True if domain looks valid
+ */
+function isValidDomain(domain) {
+  if (!domain) return false;
+
+  // Basic validation
+  const domainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/i;
+
+  return domainRegex.test(domain);
+}
+
+/**
+ * Check if email prediction looks valid
+ * @param {string} email - Predicted email
+ * @param {string} name - Person's name (for validation)
+ * @returns {Object} { valid: boolean, reason: string }
+ */
+function validateEmailPrediction(email, name) {
+  if (!email) {
+    return { valid: false, reason: 'Email is empty' };
+  }
+
+  if (!validateEmail(email)) {
+    return { valid: false, reason: 'Invalid email format' };
+  }
+
+  const [localPart, domain] = email.split('@');
+
+  // Check if local part is suspiciously short or generic
+  if (localPart.length < 2) {
+    return { valid: false, reason: 'Email local part too short' };
+  }
+
+  // Check if domain is valid
+  if (!isValidDomain(domain)) {
+    return { valid: false, reason: 'Invalid email domain' };
+  }
+
+  // Check if local part contains any part of the person's name
+  if (name) {
+    const sanitizedName = sanitizeForEmail(name);
+    const nameParts = sanitizedName.split(/\s+/);
+    const hasNamePart = nameParts.some(part =>
+      part.length > 2 && localPart.includes(part)
+    );
+
+    if (!hasNamePart) {
+      return { valid: false, reason: 'Email does not appear to match the person\'s name' };
+    }
+  }
+
+  return { valid: true, reason: '' };
+}
+
+// ==========================
+// PROFILE STALENESS
+// ==========================
+
+/**
+ * Check if a saved profile is stale
+ * @param {Object} profile - Saved profile with savedAt timestamp
+ * @returns {Object} { stale: boolean, monthsOld: number, message: string }
+ */
+function checkProfileStaleness(profile) {
+  if (!profile.savedAt) {
+    return {
+      stale: true,
+      monthsOld: 0,
+      message: 'Unknown save date',
+      severity: 'warning'
+    };
+  }
+
+  const monthsOld = (Date.now() - profile.savedAt) / (1000 * 60 * 60 * 24 * 30);
+
+  if (monthsOld > 12) {
+    return {
+      stale: true,
+      monthsOld: Math.floor(monthsOld),
+      message: `Profile is ${Math.floor(monthsOld)} months old. Likely outdated.`,
+      severity: 'error',
+      action: 'Refresh strongly recommended'
+    };
+  } else if (monthsOld > 6) {
+    return {
+      stale: true,
+      monthsOld: Math.floor(monthsOld),
+      message: `Profile is ${Math.floor(monthsOld)} months old. May be outdated.`,
+      severity: 'warning',
+      action: 'Consider refreshing'
+    };
+  } else if (monthsOld > 3) {
+    return {
+      stale: false,
+      monthsOld: Math.floor(monthsOld),
+      message: `Profile is ${Math.floor(monthsOld)} months old.`,
+      severity: 'info',
+      action: null
+    };
+  }
+
+  return {
+    stale: false,
+    monthsOld: Math.floor(monthsOld),
+    message: 'Profile is recent',
+    severity: 'success',
+    action: null
+  };
+}
+
 // Make available globally if needed
 if (typeof window !== 'undefined') {
   window.Logger = Logger;
@@ -251,4 +534,13 @@ if (typeof window !== 'undefined') {
   window.requireOnline = requireOnline;
   window.exportSettings = exportSettings;
   window.importSettings = importSettings;
+  window.showLoading = showLoading;
+  window.setButtonLoading = setButtonLoading;
+  window.estimateTokens = estimateTokens;
+  window.truncateToTokenLimit = truncateToTokenLimit;
+  window.validateEmail = validateEmail;
+  window.sanitizeForEmail = sanitizeForEmail;
+  window.isValidDomain = isValidDomain;
+  window.validateEmailPrediction = validateEmailPrediction;
+  window.checkProfileStaleness = checkProfileStaleness;
 }
