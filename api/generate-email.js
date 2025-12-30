@@ -98,6 +98,15 @@ export default async function handler(req, res) {
     const tokenInfo = await verifyGoogleToken(accessToken);
 
     if (!tokenInfo.isValid) {
+      console.log(JSON.stringify({
+        type: 'USAGE_LOG',
+        timestamp: new Date().toISOString(),
+        email: 'unknown',
+        success: false,
+        status: 401,
+        reason: 'invalid_token'
+      }));
+
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'Invalid Google OAuth token',
@@ -111,6 +120,15 @@ export default async function handler(req, res) {
     // 2. Check whitelist
     if (!isWhitelisted(userEmail)) {
       if (DEBUG) console.log('User not whitelisted:', userEmail);
+
+      console.log(JSON.stringify({
+        type: 'USAGE_LOG',
+        timestamp: new Date().toISOString(),
+        email: userEmail,
+        success: false,
+        status: 403,
+        reason: 'not_whitelisted'
+      }));
 
       return res.status(403).json({
         error: 'Forbidden',
@@ -160,7 +178,18 @@ export default async function handler(req, res) {
 
     if (DEBUG) console.log('Request successful for:', userEmail);
 
-    // 5. Return response
+    // 5. Log usage in structured format for analytics
+    console.log(JSON.stringify({
+      type: 'USAGE_LOG',
+      timestamp: new Date().toISOString(),
+      email: userEmail,
+      model: req.body.model || 'unknown',
+      tokens: anthropicData.usage?.input_tokens + anthropicData.usage?.output_tokens || 0,
+      success: true,
+      status: 200
+    }));
+
+    // 6. Return response
     return res.status(200).json(anthropicData);
 
   } catch (error) {
