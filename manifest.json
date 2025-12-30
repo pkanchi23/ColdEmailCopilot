@@ -19,7 +19,8 @@
   "host_permissions": [
     "*://*.linkedin.com/*",
     "*://api.openai.com/*",
-    "*://api.anthropic.com/*"
+    "*://api.anthropic.com/*",
+    "*://*.vercel.app/*"
   ],
   "background": {
     "service_worker": "background.js"
