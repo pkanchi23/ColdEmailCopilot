@@ -108,7 +108,7 @@ async function handleGenerateDraft(requestData) {
         // Check rate limit
         await apiRateLimiter.checkLimit();
 
-        const profileData = requestData.profile;
+        let profileData = requestData.profile;
         const specialInstructions = requestData.instructions || '';
         let dynamicSenderName = requestData.senderName;
         const includeQuestions = requestData.includeQuestions || false;
@@ -125,6 +125,15 @@ async function handleGenerateDraft(requestData) {
             financeRecruitingMode = false,
             debugMode = false
         } = await chrome.storage.local.get(['openAiApiKey', 'anthropicApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
+
+        // Token counting and truncation to prevent exceeding model limits
+        const originalTokens = estimateTokens(JSON.stringify(profileData));
+        if (originalTokens > 3000) {
+            Logger.warn(`Profile data has ${originalTokens} tokens, truncating to fit within limits`);
+            profileData = truncateToTokenLimit(profileData, 3000);
+        } else {
+            Logger.log(`Profile data tokens: ${originalTokens}`);
+        }
 
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
@@ -1432,23 +1441,39 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
                         const companyMatch = bestMatch;
 
                         if (companyMatch) {
-                            const nameParts = profileData.name.toLowerCase().split(' ').filter(p => !p.includes('.'));
+                            // Sanitize name to handle special characters and diacritics
+                            const sanitizedName = sanitizeForEmail(profileData.name);
+                            const nameParts = sanitizedName.split(' ').filter(p => p.length > 0 && !p.includes('.'));
+
                             if (nameParts.length >= 2) {
-                                const first = nameParts[0].replace(/[^a-z]/g, '');
-                                const last = nameParts[nameParts.length - 1].replace(/[^a-z]/g, '');
+                                const first = nameParts[0];
+                                const last = nameParts[nameParts.length - 1];
 
                                 if (first.length > 0 && last.length > 0) {
                                     // Generate primary email
                                     const primaryEmail = parseEmailFormat(companyMatch.format, first, last);
+
+                                    // Validate the generated email
                                     if (primaryEmail) {
-                                        predictedEmail = primaryEmail;
+                                        const validation = validateEmailPrediction(primaryEmail, profileData.name);
+                                        if (validation.valid) {
+                                            predictedEmail = primaryEmail;
+                                        } else {
+                                            Logger.warn(`Email prediction validation failed: ${validation.reason}`);
+                                            Logger.warn(`Generated: ${primaryEmail}, Name: ${profileData.name}`);
+                                        }
                                     }
 
                                     // Generate alternative email for BCC
                                     if (companyMatch.alt) {
                                         const altEmail = parseEmailFormat(companyMatch.alt, first, last);
                                         if (altEmail) {
-                                            predictedBcc = altEmail;
+                                            const altValidation = validateEmailPrediction(altEmail, profileData.name);
+                                            if (altValidation.valid) {
+                                                predictedBcc = altEmail;
+                                            } else {
+                                                Logger.warn(`BCC email validation failed: ${altValidation.reason}`);
+                                            }
                                         }
                                     }
 
