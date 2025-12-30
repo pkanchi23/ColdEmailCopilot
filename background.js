@@ -35,7 +35,13 @@ async function callVercelProxy(requestBody) {
         const errorData = await response.json().catch(() => ({}));
 
         if (response.status === 401) {
-            throw new Error('Authentication failed. Please sign in to Gmail again.');
+            // Token is invalid or expired - clear cache to force refresh
+            await chrome.storage.local.remove(['gmailToken', 'gmailTokenExpiry']);
+            const detailsStr = typeof errorData.details === 'object' ? JSON.stringify(errorData.details) : (errorData.details || '');
+            const details = detailsStr ? ` (${detailsStr})` : '';
+            const errorMessage = `Authentication failed: ${errorData.message || 'Unknown error'}${details}`;
+            console.error('[Vercel Proxy Error] 401 Unauthorized:', errorMessage, errorData);
+            throw new Error(`${errorMessage}. Please sign in to Gmail again.`);
         } else if (response.status === 403) {
             throw new Error(
                 `Your email is not authorized to use this extension. ` +
@@ -61,7 +67,7 @@ async function callVercelProxy(requestBody) {
  * Initialize logger
  */
 (async () => {
-  await Logger.init();
+    await Logger.init();
 })();
 
 // --- Web Grounding Helper ---
@@ -153,7 +159,6 @@ async function handleGenerateDraft(requestData) {
 
         const {
             openAiApiKey,
-            anthropicApiKey,
             userContext,
             senderName: storedSenderName,
             model = 'gpt-5.2',
@@ -415,9 +420,7 @@ Two things I'm curious about:
 
         // --- ANTHROPIC / CLAUDE API CALL ---
         if (model.startsWith('claude-')) {
-            if (!anthropicApiKey) {
-                throw new Error('Claude API Key missing. Please set it in options.');
-            }
+            // NOTE: We do NOT need an API key for Claude anymore; it's handled by the Vercel proxy.
 
             // Split prompt into cacheable (static instructions) and dynamic (profile data)
             const staticInstructions = `You're a real person writing a genuine cold email (NOT marketer/salesperson).
@@ -624,7 +627,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
             // Length similarity check - prevent matching vastly different company names
             const lengthRatio = Math.min(pCompanyNorm.length, dCompanyNorm.length) /
-                               Math.max(pCompanyNorm.length, dCompanyNorm.length);
+                Math.max(pCompanyNorm.length, dCompanyNorm.length);
 
             // If lengths are too different (e.g., "Google" vs "Point72"), heavily penalize
             if (lengthRatio < 0.5) return 0;
@@ -655,7 +658,7 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
 
             // Contains match - but only if it's a meaningful substring (not just 2-3 chars)
             const containsMatch = (pCompanyNorm.includes(dCompanyNorm) && dCompanyNorm.length >= 4) ||
-                                 (dCompanyNorm.includes(pCompanyNorm) && pCompanyNorm.length >= 4);
+                (dCompanyNorm.includes(pCompanyNorm) && pCompanyNorm.length >= 4);
             if (containsMatch) return Math.max(90, levenshteinScore);
 
             // Token-based matching with stricter criteria

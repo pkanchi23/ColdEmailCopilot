@@ -8,7 +8,7 @@ const CONFIG = {
   // Your Vercel deployment URL
   // Example: 'https://cold-email-copilot-abc123.vercel.app'
   // After deploying, replace this with your actual Vercel URL
-  VERCEL_API_URL: 'YOUR_VERCEL_URL_HERE',
+  VERCEL_API_URL: 'https://cold-email-copilot.vercel.app',
 
   // API endpoint path (don't change this)
   API_ENDPOINT: '/api/generate-email',

@@ -85,3 +85,4 @@ typings/
 # Extension private key (DO NOT COMMIT)
 extension-key.pem
 get-extension-id.js
+.vercel

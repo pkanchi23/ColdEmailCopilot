@@ -34,16 +34,7 @@ const saveOptions = () => {
   const darkMode = document.getElementById('darkMode').checked;
   const webhookUrl = document.getElementById('webhookUrl').value;
 
-  // Only require OpenAI API key if using GPT models
-  if (model.startsWith('gpt-') && !apiKey) {
-    showStatus('OpenAI API Key required for GPT models.', 'error');
-    return;
-  }
-
-  if (modelSelect === 'custom' && !customModel) {
-    showStatus('Please enter a custom model name.', 'error');
-    return;
-  }
+  // No local API key needed for Claude (handled by Vercel proxy)
 
   // Validate webhook URL if provided
   if (webhookUrl && !isValidUrl(webhookUrl)) {

@@ -2,13 +2,13 @@
  * Initialize logger and dark mode
  */
 (async () => {
-  await Logger.init();
+    await Logger.init();
 
-  // Apply dark mode if enabled
-  const { darkMode = false } = await chrome.storage.local.get('darkMode');
-  if (darkMode) {
-    document.body.classList.add('dark-mode');
-  }
+    // Apply dark mode if enabled
+    const { darkMode = false } = await chrome.storage.local.get('darkMode');
+    if (darkMode) {
+        document.body.classList.add('dark-mode');
+    }
 })();
 
 // ==========================
@@ -121,34 +121,96 @@ const showPrompt = (message, defaultValue = '') => {
     });
 };
 
-document.getElementById('optionsBtn').addEventListener('click', () => {
-    if (chrome.runtime.openOptionsPage) {
-        chrome.runtime.openOptionsPage();
-    } else {
-        window.open(chrome.runtime.getURL('options.html'));
-    }
-});
+// --- INITIALIZATION ---
 
+// robust initialization (run immediately if loaded at bottom, or wait)
+// --- INITIALIZATION ---
 
-// --- Tab Logic ---
-const tabs = document.querySelectorAll('.tab');
-tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        // Remove active class from all
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+// robust initialization (run immediately if loaded at bottom, or wait)
+const initPopup = async () => {
+    console.log('Popup script initializing...');
 
-        // Add active to clicked
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.view).classList.add('active');
-
-        if (tab.dataset.view === 'saved') {
-            loadSavedProfiles();
-        } else if (tab.dataset.view === 'templates') {
-            loadTemplates();
+    try {
+        // Initialize Logger
+        if (window.Logger) {
+            await Logger.init();
         }
-    });
-});
+
+        // Apply dark mode if enabled
+        try {
+            const { darkMode = false } = await chrome.storage.local.get('darkMode');
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+            }
+        } catch (err) {
+            console.error('Failed to load dark mode setting:', err);
+        }
+
+        // Options Button
+        const optionsBtn = document.getElementById('optionsBtn');
+        if (optionsBtn) {
+            optionsBtn.addEventListener('click', () => {
+                if (chrome.runtime.openOptionsPage) {
+                    chrome.runtime.openOptionsPage();
+                } else {
+                    window.open(chrome.runtime.getURL('options.html'));
+                }
+            });
+            console.log('Options button listener attached');
+        } else {
+            console.error('Options button not found');
+        }
+
+        // --- Tab Logic ---
+        const tabs = document.querySelectorAll('.tab');
+        if (tabs.length > 0) {
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+                    // Add active to clicked
+                    tab.classList.add('active');
+                    const viewId = tab.dataset.view;
+                    const viewElement = document.getElementById(viewId);
+                    if (viewElement) {
+                        viewElement.classList.add('active');
+                    } else {
+                        console.error(`View element ${viewId} not found`);
+                    }
+
+                    if (viewId === 'saved') {
+                        loadSavedProfiles();
+                    } else if (viewId === 'templates') {
+                        loadTemplates();
+                    }
+                });
+            });
+            console.log('Tab listeners attached');
+        } else {
+            console.error('No tabs found');
+        }
+
+    } catch (e) {
+        console.error('Error during initialization:', e);
+        document.body.innerHTML += `<div style="color:red; font-size:10px; padding:10px;">Init Error: ${e.message}</div>`;
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPopup);
+} else {
+    initPopup();
+}
+
+// Global error handler
+window.onerror = function (msg, url, line, col, error) {
+    document.body.innerHTML += `<div style="color:red; font-size:10px; padding:10px;">
+      Runtime Error: ${msg} <br> ${url}:${line}
+   </div>`;
+    return false;
+};
 
 // --- Saved Profiles Logic ---
 let currentListFilter = 'all';
@@ -194,9 +256,9 @@ const loadSavedProfiles = async () => {
             const experience = (p.experience || '').toLowerCase();
 
             return name.includes(query) ||
-                   headline.includes(query) ||
-                   location.includes(query) ||
-                   experience.includes(query);
+                headline.includes(query) ||
+                location.includes(query) ||
+                experience.includes(query);
         });
     }
 
@@ -331,9 +393,9 @@ document.getElementById('importFile')?.addEventListener('change', async (e) => {
         // Validate each profile has required fields
         const validProfiles = importData.profiles.filter(p => {
             return p && typeof p === 'object' &&
-                   typeof p.url === 'string' &&
-                   typeof p.name === 'string' &&
-                   p.url.includes('linkedin.com');
+                typeof p.url === 'string' &&
+                typeof p.name === 'string' &&
+                p.url.includes('linkedin.com');
         });
 
         if (validProfiles.length === 0) {
