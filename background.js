@@ -360,7 +360,7 @@ Two things I'm curious about:
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-      SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+      SUBJECT: MUST be about YOU (the sender), NOT the recipient. Either: (1) A question you want to ask them, OR (2) Your background/situation + what you're seeking advice on. Examples: "Advice on banking to operating", "Question about pivoting to tech", "Transitioning from consulting to startups". NEVER about recipient's career ("Your move to X", "Career at Y"). Never generic: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
       FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
@@ -431,7 +431,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-SUBJECT: State YOUR purpose (e.g., "Advice on banking to operating"). NOT their career move. Never: "Quick Question"/"Reaching Out"/"Coffee?"`}
+SUBJECT: MUST be about YOU (the sender), NOT the recipient. Either: (1) A question you want to ask them, OR (2) Your background/situation + what you're seeking advice on. Examples: "Advice on banking to operating", "Question about pivoting to tech", "Transitioning from consulting to startups". NEVER about recipient's career ("Your move to X", "Career at Y"). Never generic: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
 FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
