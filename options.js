@@ -204,7 +204,7 @@ const restoreOptions = () => {
 
       // Check authentication status
       checkAuthStatus();
-      loadUsageStats();
+      // loadUsageStats(); // Removed - using cloud stats instead (fetchCloudStats)
 
       // Show welcome message for first-time users
       chrome.storage.local.get(['hasSeenWelcome'], (result) => {
@@ -217,19 +217,21 @@ const restoreOptions = () => {
   );
 };
 
-function loadUsageStats() {
-  chrome.storage.local.get(['stats_requestCount', 'stats_inputTokens', 'stats_outputTokens'], (result) => {
-    const requests = result.stats_requestCount || 0;
-    const inputTokens = result.stats_inputTokens || 0;
-    const outputTokens = result.stats_outputTokens || 0;
-    const totalTokens = inputTokens + outputTokens;
+// Removed loadUsageStats() function - replaced by cloud stats (fetchCloudStats)
+// function loadUsageStats() {
+//   chrome.storage.local.get(['stats_requestCount', 'stats_inputTokens', 'stats_outputTokens'], (result) => {
+//     const requests = result.stats_requestCount || 0;
+//     const inputTokens = result.stats_inputTokens || 0;
+//     const outputTokens = result.stats_outputTokens || 0;
+//     const totalTokens = inputTokens + outputTokens;
+//
+//     document.getElementById('statsRequests').textContent = requests;
+//     document.getElementById('statsTotalTokens').textContent = totalTokens;
+//     document.getElementById('statsInputTokens').textContent = inputTokens;
+//     document.getElementById('statsOutputTokens').textContent = outputTokens;
+//   });
+// }
 
-    document.getElementById('statsRequests').textContent = requests;
-    document.getElementById('statsTotalTokens').textContent = totalTokens;
-    document.getElementById('statsInputTokens').textContent = inputTokens;
-    document.getElementById('statsOutputTokens').textContent = outputTokens;
-  });
-}
 
 const showStatus = (msg, type) => {
   const status = document.getElementById('status');
