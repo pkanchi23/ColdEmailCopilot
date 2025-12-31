@@ -117,7 +117,6 @@ We may update this policy. Changes will be posted here with an updated "Last Upd
 
 For questions or concerns:
 - Email: pranavkanchi23@gmail.com
-- Website: https://cold-email-copilot.vercel.app
 
 ## Compliance
 
