@@ -1,6 +1,6 @@
 # ColdEmailCopilot 📧
 
-AI-powered cold email generation from LinkedIn profiles. Craft personalized outreach emails with GPT-4 and Claude in seconds.
+AI-powered cold email generation from LinkedIn profiles. Craft personalized outreach emails with ChatGPT and Claude in seconds.
 
 ## ✨ Features
 
