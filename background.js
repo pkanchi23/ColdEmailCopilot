@@ -167,9 +167,10 @@ async function handleGenerateDraft(requestData) {
             model = 'claude-sonnet-4-20250514',
             tone = 'Casual & Friendly',
             exampleEmail,
+            generalInstructions = '',
             financeRecruitingMode = false,
             debugMode = false
-        } = await chrome.storage.local.get(['userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
+        } = await chrome.storage.local.get(['userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'generalInstructions', 'financeRecruitingMode', 'debugMode']);
 
         // Token counting and truncation to prevent exceeding model limits
         const originalTokens = estimateTokens(JSON.stringify(profileData));
@@ -193,6 +194,17 @@ async function handleGenerateDraft(requestData) {
             Logger.log('Model:', model);
             Logger.log('Tone:', tone);
             Logger.log('Finance Mode:', financeRecruitingMode);
+        }
+
+        // Sanitize general instructions (max 500 chars, strip dangerous patterns)
+        let sanitizedInstructions = '';
+        if (generalInstructions && generalInstructions.trim()) {
+            sanitizedInstructions = generalInstructions.trim().substring(0, 500);
+            // Remove potential prompt injection patterns
+            sanitizedInstructions = sanitizedInstructions.replace(/system:/gi, '').replace(/assistant:/gi, '');
+            if (debugMode) {
+                Logger.log('General Instructions:', sanitizedInstructions);
+            }
         }
 
         // Extract first name for signature
@@ -315,7 +327,12 @@ Two things I'm curious about:
       Good: "What spurred the move to a 20-person startup at the 4 year mark?" / "What made you confident in the timing for consumer VC?"
       Bad: "Pick your brain?" / "Any advice?" / "What's it like?" / "How's the new gig?" / "Most people I know..." / "Your sequencing suggests..." / Any vague question / Any mention of compensation` : '';
 
-        const prompt = `
+        const prompt = `${sanitizedInstructions ? `
+===== USER'S GENERAL INSTRUCTIONS (HIGH PRIORITY - FOLLOW STRICTLY) =====
+${sanitizedInstructions}
+===== END GENERAL INSTRUCTIONS =====
+
+` : ''}
       You're a real person writing a genuine cold email (NOT marketer/salesperson).
 
       CRITICAL RULES:
@@ -424,7 +441,11 @@ Two things I'm curious about:
             // NOTE: We do NOT need an API key for Claude anymore; it's handled by the Vercel proxy.
 
             // Split prompt into cacheable (static instructions) and dynamic (profile data)
-            const staticInstructions = `You're a real person writing a genuine cold email (NOT marketer/salesperson).
+            const staticInstructions = `${sanitizedInstructions ? `===== USER'S GENERAL INSTRUCTIONS (HIGH PRIORITY - FOLLOW STRICTLY) =====
+${sanitizedInstructions}
+===== END GENERAL INSTRUCTIONS =====
+
+` : ''}You're a real person writing a genuine cold email (NOT marketer/salesperson).
 
 CRITICAL RULES:
 1. BODY: NO "Hi [Name]" in JSON body. Start with first sentence.
