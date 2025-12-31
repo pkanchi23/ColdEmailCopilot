@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>ColdEmailCopilot Admin</title>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        /* Views */
+        #loginView {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        #dashboardView {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+        }
+
+        /* Typography */
+        h1 {
+            margin-top: 0;
+            color: #f8fafc;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        h2 {
+            color: #cbd5e1;
+            font-weight: 500;
+            margin-bottom: 30px;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover {
+            background: #334155;
+        }
+
+        /* Components */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-free {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        .badge-paid {
+            background: #059669;
+            color: #ecfdf5;
+        }
+
+        .badge-developer {
+            background: #4f46e5;
+            color: #eef2ff;
+        }
+
+        .badge-tester {
+            background: #db2777;
+            color: #fdf2f8;
+        }
+
+        button.refresh-btn {
+            padding: 8px 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        button.refresh-btn:hover {
+            background: #2563eb;
+        }
+
+        .prices {
+            font-size: 12px;
+            color: #94a3b8;
+            font-family: 'Menlo', monospace;
+        }
+
+        #userInfo {
+            font-size: 14px;
+            color: #cbd5e1;
+            margin-right: 15px;
+        }
+
+        #status {
+            margin: 15px 0;
+            font-size: 14px;
+            color: #94a3b8;
+            min-height: 20px;
+        }
+
+        /* Login Card */
+        .login-card {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login View (Default) -->
+    <div id="loginView">
+        <div class="login-card">
+            <h1 style="font-size: 32px; margin-bottom: 10px;">🔐 Restricted Access</h1>
+            <p style="color: #94a3b8; margin-bottom: 30px;">ColdEmailCopilot Admin Dashboard</p>
+
+            <div id="g_id_onload"
+                data-client_id="799846906088-n98o6ucqurtqutv53d8p1kefi7vpupr4.apps.googleusercontent.com"
+                data-callback="handleCredentialResponse" data-auto_prompt="false">
+            </div>
+
+            <button id="googleSignInBtn" onclick="tokenClient.requestAccessToken()"
+                style="width: 100%; padding: 12px; background: #4285F4; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; transition: background 0.2s;">
+                <svg style="width:20px;height:20px;margin-right:12px" viewBox="0 0 24 24">
+                    <path fill="currentColor"
+                        d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-8c2.25 0 4.1.73 5.43 1.99l2.01-2.01C17.76 2.06 14.86 1 11.66 1 5.92 1 1 5.92 1 12s4.91 11 10.66 11c5.96 0 10.89-4.22 10.23-11.9z" />
+                </svg>
+                Sign In with Google
+            </button>
+            <p id="loginStatus" style="color: #ef4444; margin-top: 15px; font-size: 13px; min-height: 20px;"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard View (Hidden until Auth) -->
+    <div id="dashboardView">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Admin Dashboard</h1>
+            <div style="display: flex; align-items: center;">
+                <span id="userInfo"></span>
+                <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
+                <button onclick="logout()"
+                    style="margin-left: 10px; background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Sign
+                    Out</button>
+            </div>
+        </div>
+
+
+        <!-- Add New User Section -->
+        <div style="margin: 20px 0; padding: 20px; background: #0f172a; border: 1px solid #334155; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #f8fafc; font-size: 16px; margin-bottom: 15px;">➕ Add New User</h3>
+            <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #94a3b8;">Email
+                        Address</label>
+                    <input type="email" id="newUserEmail" placeholder="user@example.com"
+                        style="width: 100%; padding: 8px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #e2e8f0; font-size: 14px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #94a3b8;">Plan
+                        Tier</label>
+                    <select id="newUserTier"
+                        style="width: 100%; padding: 8px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #e2e8f0; font-size: 14px;">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid</option>
+                        <option value="developer">Developer</option>
+                        <option value="tester">Tester</option>
+                    </select>
+                </div>
+                <button onclick="addUser()"
+                    style="padding: 8px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; height: 36px;">
+                    Add User
+                </button>
+            </div>
+            <div id="addUserStatus" style="margin-top: 10px; font-size: 13px; min-height: 20px;"></div>
+        </div>
+
+        <div id="status">Loading...</div>
+
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Plan</th>
+                    <th>Sent (Total)</th>
+                    <th>Spend (Est)</th>
+                    <th>OpenAI (In/Out)</th>
+                    <th>Claude (In/Out)</th>
+                    <th>Last Active</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Rows injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const PRICES = {
+            gpt_input: 1.75, gpt_output: 14.00,
+            claude_input: 3.00, claude_output: 15.00
+        };
+
+        let tokenClient;
+        let accessToken = localStorage.getItem('admin_access_token');
+
+        // Initialize GIS
+        window.onload = function () {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: '799846906088-n98o6ucqurtqutv53d8p1kefi7vpupr4.apps.googleusercontent.com',
+                scope: 'https://www.googleapis.com/auth/userinfo.email',
+                callback: (response) => {
+                    if (response.access_token) {
+                        accessToken = response.access_token;
+                        localStorage.setItem('admin_access_token', accessToken);
+                        showDashboard();
+                    }
+                },
+            });
+
+            // Check if we have a valid session
+            if (accessToken) {
+                showDashboard();
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('dashboardView').style.display = 'block';
+            document.body.style.height = 'auto'; // Reset flex height
+            loadData();
+        }
+
+        function showLogin(msg) {
+            document.getElementById('loginView').style.display = 'flex';
+            document.getElementById('dashboardView').style.display = 'none';
+            document.body.style.height = '100vh'; // Center vertically
+            if (msg) document.getElementById('loginStatus').textContent = msg;
+        }
+
+        function logout() {
+            accessToken = null;
+            localStorage.removeItem('admin_access_token');
+            showLogin("Logged out safely.");
+        }
+
+        async function loadData() {
+            const status = document.getElementById('status');
+            const tbody = document.getElementById('tableBody');
+
+            status.textContent = 'Fetching latest data...';
+
+            try {
+                const res = await fetch('/api/admin-stats', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    throw new Error('Unauthorized');
+                }
+
+                if (!res.ok) throw new Error('Error fetching data');
+
+                const data = await res.json();
+                status.textContent = `Sorted by Last Active • ${data.count} Users Total`;
+
+                tbody.innerHTML = data.users.map(u => {
+                    // Calc Spend
+                    const oa_in = parseInt(u.openai_input_tokens || 0);
+                    const oa_out = parseInt(u.openai_output_tokens || 0);
+                    const cl_in = parseInt(u.anthropic_input_tokens || 0);
+                    const cl_out = parseInt(u.anthropic_output_tokens || 0);
+
+                    const oaCost = (oa_in / 1e6 * PRICES.gpt_input) + (oa_out / 1e6 * PRICES.gpt_output);
+                    const clCost = (cl_in / 1e6 * PRICES.claude_input) + (cl_out / 1e6 * PRICES.claude_output);
+                    const totalCost = oaCost + clCost;
+                    const totalSent = parseInt(u.openai_emails_sent || 0) + parseInt(u.anthropic_emails_sent || 0);
+
+                    return `
+                        <tr>
+                            <td style="font-weight:500;">${u.email}</td>
+                            <td><span class="badge badge-${(u.plan_tier || 'free').toLowerCase()}">${u.plan_tier || 'FREE'}</span></td>
+                            <td>${totalSent}</td>
+                            <td style="font-weight: bold; color: ${totalCost > 20 ? '#ef4444' : '#10b981'};">$${totalCost.toFixed(4)}</td>
+                            <td class="prices">${(oa_in / 1000).toFixed(1)}k / ${(oa_out / 1000).toFixed(1)}k</td>
+                            <td class="prices">${(cl_in / 1000).toFixed(1)}k / ${(cl_out / 1000).toFixed(1)}k</td>
+                            <td>${u.updated_at ? new Date(u.updated_at).toLocaleDateString() : '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+                if (e.message.includes('Unauthorized')) {
+                    logout();
+                    showLogin("Session expired. Please sign in again.");
+                } else {
+                    status.textContent = 'Error: ' + e.message;
+                }
+            }
+        }
+
+        async function addUser() {
+            const email = document.getElementById('newUserEmail').value.trim();
+            const tier = document.getElementById('newUserTier').value;
+            const statusDiv = document.getElementById('addUserStatus');
+
+            if (!email) {
+                statusDiv.textContent = '⚠️ Please enter an email address';
+                statusDiv.style.color = '#ef4444';
+                return;
+            }
+
+            statusDiv.textContent = 'Adding user...';
+            statusDiv.style.color = '#3b82f6';
+
+            try {
+                const res = await fetch('/api/admin-add-user', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, plan_tier: tier })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to add user');
+                }
+
+                statusDiv.textContent = `✅ Added ${email} as ${tier.toUpperCase()}`;
+                statusDiv.style.color = '#10b981';
+
+                // Clear inputs
+                document.getElementById('newUserEmail').value = '';
+                document.getElementById('newUserTier').value = 'free';
+
+                // Refresh user table
+                setTimeout(() => loadData(), 1000);
+
+            } catch (error) {
+                statusDiv.textContent = `❌ Error: ${error.message}`;
+                statusDiv.style.color = '#ef4444';
+            }
+        }
+
+    </script>
+</body>
+
+</html>

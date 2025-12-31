@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
     <style>
         body {
             width: 250px;
@@ -113,6 +114,61 @@
             background-color: #fee2e2;
             color: #991b1b;
         }
+
+        /* Dark Mode */
+        body.dark-mode {
+            background-color: #1f2937;
+            color: #f9fafb;
+        }
+
+        body.dark-mode h2 {
+            color: #f9fafb;
+        }
+
+        body.dark-mode .tab {
+            color: #d1d5db;
+        }
+
+        body.dark-mode .tab.active {
+            color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+
+        body.dark-mode .tabs {
+            border-bottom-color: #374151;
+        }
+
+        body.dark-mode .saved-item {
+            background-color: #111827;
+            border-color: #374151;
+        }
+
+        body.dark-mode .saved-name {
+            color: #f9fafb;
+        }
+
+        body.dark-mode .saved-headline {
+            color: #9ca3af;
+        }
+
+        body.dark-mode #optionsBtn {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+
+        body.dark-mode #optionsBtn:hover {
+            background-color: #4b5563;
+        }
+
+        body.dark-mode input[type="text"] {
+            background-color: #111827;
+            border-color: #374151;
+            color: #f9fafb;
+        }
+
+        body.dark-mode #emptyState {
+            color: #9ca3af;
+        }
     </style>
 </head>
 
@@ -120,7 +176,6 @@
     <div class="tabs">
         <button class="tab active" data-view="draft">Draft Email</button>
         <button class="tab" data-view="saved">Saved List</button>
-        <button class="tab" data-view="templates">Templates</button>
     </div>
 
     <!-- Draft View -->
@@ -137,8 +192,10 @@
             style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; margin-bottom: 10px; box-sizing: border-box;">
 
         <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-            <button id="exportBtn" style="flex: 1; padding: 6px; font-size: 11px; background: #10b981; color: white;">Export</button>
-            <button id="importBtn" style="flex: 1; padding: 6px; font-size: 11px; background: #6366f1; color: white;">Import</button>
+            <button id="exportBtn"
+                style="flex: 1; padding: 6px; font-size: 11px; background: #10b981; color: white;">Export</button>
+            <button id="importBtn"
+                style="flex: 1; padding: 6px; font-size: 11px; background: #6366f1; color: white;">Import</button>
         </div>
         <input type="file" id="importFile" accept=".json" style="display: none;">
 
@@ -147,20 +204,6 @@
         </div>
         <div id="emptyState" style="color: #6b7280; font-size: 13px; margin-top: 20px;">
             No profiles saved yet.<br>Click "Save" on a LinkedIn profile.
-        </div>
-    </div>
-
-    <!-- Templates View -->
-    <div id="templates" class="view">
-        <button id="saveTemplateBtn" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
-            + Save Last Generated Email as Template
-        </button>
-
-        <div id="templateList">
-            <!-- Templates injected here -->
-        </div>
-        <div id="templatesEmptyState" style="color: #6b7280; font-size: 13px; margin-top: 20px;">
-            No templates yet.<br>Generate an email and save it as a template.
         </div>
     </div>
 

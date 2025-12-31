@@ -42,6 +42,10 @@ async function callVercelProxy(requestBody) {
             const errorMessage = `Authentication failed: ${errorData.message || 'Unknown error'}${details}`;
             console.error('[Vercel Proxy Error] 401 Unauthorized:', errorMessage, errorData);
             throw new Error(`${errorMessage}. Please sign in to Gmail again.`);
+        } else if (response.status === 402) {
+            throw new Error(
+                "Thank you for using our product. The limit on generations has been hit. Consider upgrading your plan."
+            );
         } else if (response.status === 403) {
             throw new Error(
                 `Your email is not authorized to use this extension. ` +
@@ -158,15 +162,14 @@ async function handleGenerateDraft(requestData) {
         const useWebGrounding = requestData.useWebGrounding || false;
 
         const {
-            openAiApiKey,
             userContext,
             senderName: storedSenderName,
-            model = 'gpt-5.2',
+            model = 'claude-sonnet-4-20250514',
             tone = 'Casual & Friendly',
             exampleEmail,
             financeRecruitingMode = false,
             debugMode = false
-        } = await chrome.storage.local.get(['openAiApiKey', 'userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
+        } = await chrome.storage.local.get(['userContext', 'senderName', 'model', 'tone', 'exampleEmail', 'financeRecruitingMode', 'debugMode']);
 
         // Token counting and truncation to prevent exceeding model limits
         const originalTokens = estimateTokens(JSON.stringify(profileData));
@@ -179,10 +182,7 @@ async function handleGenerateDraft(requestData) {
 
         const finalSenderName = dynamicSenderName || storedSenderName || 'Your Name';
 
-        // Only OpenAI models require an API key now (Claude uses Vercel proxy)
-        if (model.startsWith('gpt-') && !openAiApiKey) {
-            throw new Error('OpenAI API Key required for GPT models. Please set it in extension options.');
-        }
+        // All API calls now go through Vercel proxy (no local API key needed)
 
         // Debug mode logging
         if (debugMode) {
@@ -327,9 +327,10 @@ Two things I'm curious about:
       6. STRONG OPENING: Grab attention with specific decision/transition, not generic observations.
       7. SHOW research through specifics. Never say "I did research" or "impressed by career". No flattery.
       8. Questions under 25 words. Cut context, keep question.
-      9. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
-      10. FORBIDDEN: "buyside", "sellside", "sell-side", "buy-side". Use specific terms.
-      11. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
+      9. Questions reveal deep thought about career choices. Show analytical thinking, not surface curiosity.
+      10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth and intellectual engagement.
+      11. FORBIDDEN: "buyside", "sellside", "sell-side", "buy-side". Use specific terms.
+      12. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
       12. NO SPECIAL CHARACTERS: Never use arrows (→), bullets (•), em-dashes (—), or Unicode symbols. Use only standard ASCII: hyphens (-), asterisks (*), regular quotes.
 
       RECIPIENT:
@@ -384,7 +385,7 @@ Two things I'm curious about:
       ${questionInstructions}
 
       TONE: ${financeRecruitingMode ? 'Professional & Formal' : tone}
-      GOAL: Be concise and curious. Ask about ONE interesting choice. Don't impress with analysis.
+      GOAL: Make email engaging and hard to ignore. Find specific connections. Ask questions they're uniquely positioned to answer based on their career trajectory.
 
       Write like a human (no jargon, natural).
 
@@ -403,7 +404,7 @@ Two things I'm curious about:
       `}
 
       ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-      SUBJECT: MUST be about YOU (the sender), NOT the recipient. Either: (1) A question you want to ask them, OR (2) Your background/credentials + what you're seeking. When using format #2, include sender's notable position/background to increase response likelihood. Examples: "GS Analyst Seeking Advice", "McKinsey Consultant - Question on Tech Transition", "Yale Student - Advice on Banking to PE", "Former Founder Exploring Operating Roles". NEVER about recipient's career ("Your move to X", "Career at Y"). Never generic: "Quick Question"/"Reaching Out"/"Coffee?"`}
+      SUBJECT: MUST be about YOU (the sender), NOT the recipient. Format: Your background/credentials + what you're seeking (general). Include sender's notable position/background to increase response likelihood. Examples: "GS Analyst Seeking Advice on Founding Experience", "McKinsey Consultant Exploring Tech Transitions", "Yale Student Interested in Banking to PE Path", "Former Founder Exploring Operating Roles". Keep it GENERAL about your interest area, NOT specific questions. NEVER about recipient's career ("Your move to X", "Career at Y"). Never generic: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
       FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."} (NO "Hi [Name]" in body).
       ALMA MATER: Only mention school if sender attended SAME one.
@@ -434,8 +435,8 @@ CRITICAL RULES:
 6. Use ACTUAL titles from profile. Don't paraphrase.
 7. STRONG OPENING: Grab attention with specific decision/transition, not generic observations.
 8. SHOW research through specifics. Never say "I did research" or "impressed by career". No flattery.
-9. Questions reveal deep thought. Show analytical thinking, not surface curiosity.
-10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth.
+9. Questions reveal deep thought about career choices. Show analytical thinking, not surface curiosity.
+10. Adjust tone for seniority. Senior people (MDs/Partners/VPs) expect depth and intellectual engagement.
 11. FORMATTING: Keep paragraphs SHORT (2-3 sentences max). Use double line breaks (\n\n) ONLY between paragraphs. NEVER wrap lines within paragraphs - let each paragraph flow naturally as a single block of text. Do not insert line breaks in the middle of sentences.
 12. NO PLACEHOLDERS: Never use brackets, variables, or placeholder text like "$XXM+", "$[amount]", "[X years]", etc. Only use concrete facts from the profile. If you don't know a specific number, omit it entirely or rephrase without it.
 13. NO SPECIAL CHARACTERS: Never use arrows (→), bullets (•), em-dashes (—), or Unicode symbols. Use only standard ASCII: hyphens (-), asterisks (*), regular quotes.
@@ -472,7 +473,7 @@ ${financeRecruitingMode ? '' : `CASUAL MODE:
 `}
 
 ${financeRecruitingMode ? '' : `SIGNATURE: Best, ${firstName}
-SUBJECT: MUST be about YOU (the sender), NOT the recipient. Either: (1) A question you want to ask them, OR (2) Your background/credentials + what you're seeking. When using format #2, include sender's notable position/background to increase response likelihood. Examples: "GS Analyst Seeking Advice", "McKinsey Consultant - Question on Tech Transition", "Yale Student - Advice on Banking to PE", "Former Founder Exploring Operating Roles". NEVER about recipient's career ("Your move to X", "Career at Y"). Never generic: "Quick Question"/"Reaching Out"/"Coffee?"`}
+SUBJECT: MUST be about YOU (the sender), NOT the recipient. Format: Your background/credentials + what you're seeking (general). Include sender's notable position/background to increase response likelihood. Examples: "GS Analyst Seeking Advice on Founding Experience", "McKinsey Consultant Exploring Tech Transitions", "Yale Student Interested in Banking to PE Path", "Former Founder Exploring Operating Roles". Keep it GENERAL about your interest area, NOT specific questions. NEVER about recipient's career ("Your move to X", "Career at Y"). Never generic: "Quick Question"/"Reaching Out"/"Coffee?"`}
 
 FORMAT: ${financeRecruitingMode ? (includeQuestions ? '125-150' : '100-125') : (includeQuestions ? '125-150' : '75-100')} words. CRITICAL LINE BREAK RULE: Each paragraph MUST be written as ONE continuous flowing block of text. Do NOT insert line breaks or newlines within a paragraph. ONLY use double line breaks (\n\n) to separate different paragraphs. A paragraph should read naturally as a single text block without any internal breaks, even if it's multiple sentences long. Standard ASCII only - ABSOLUTELY NO special characters like arrows (→), bullets (•), em-dashes (—), or any Unicode symbols. Use regular hyphens (-), asterisks (*), and standard punctuation only. NEVER use placeholders like "$XXM+", "[X amount]", or bracket notation. Only state concrete facts. JSON: {"subject": "...", "body": "..."}
 ALMA MATER: Only mention school if sender attended SAME one.`;
@@ -539,26 +540,16 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             }
             content = data.content[0].text;
         }
-        // --- OPENAI API CALL ---
+        // --- OPENAI API CALL (via Vercel proxy) ---
         else {
-            if (!openAiApiKey) {
-                throw new Error('OpenAI API Key missing. Please set it in options.');
-            }
-
-            const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${openAiApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [{ role: "user", content: prompt }],
-                    response_format: { type: "json_object" }
-                })
+            const data = await callVercelProxy({
+                model: model,
+                max_tokens: 1024,
+                system: "You are a helpful assistant that outputs only JSON.",
+                messages: [{ role: "user", content: prompt }],
+                response_format: { type: "json_object" }
             });
 
-            const data = await response.json();
             if (data.error) {
                 throw new Error(data.error.message);
             }
@@ -569,12 +560,13 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
         try {
             // Remove markdown code blocks if present (common with Claude)
             let cleanContent = content.trim();
-            if (cleanContent.startsWith('```json')) {
-                cleanContent = cleanContent.replace(/^```json/, '').replace(/```$/, '');
-            } else if (cleanContent.startsWith('```')) {
-                cleanContent = cleanContent.replace(/^```/, '').replace(/```$/, '');
-            }
-            emailDraft = JSON.parse(cleanContent);
+
+            // Remove ```json\n and \n``` markers (with newlines)
+            cleanContent = cleanContent.replace(/^```json\s*\n?/i, '').replace(/\n?\s*```\s*$/i, '');
+            // Also handle plain ``` markers
+            cleanContent = cleanContent.replace(/^```\s*\n?/i, '').replace(/\n?\s*```\s*$/i, '');
+
+            emailDraft = JSON.parse(cleanContent.trim());
         } catch (e) {
             Logger.warn('JSON parsing failed, using raw content:', e);
             emailDraft = { subject: "Intro", body: content };
@@ -588,6 +580,28 @@ ${cachedPattern ? `\n\nSUCCESSFUL PATTERN (${cachedPattern.role} at ${cachedPatt
             // Match and remove greetings like "Hi Name,", "Hello Name", "Dear Name,\n\n" etc.
             body = body.replace(/^(Hi|Hello|Dear)\s+[^,\n]+,?\s*(\n\n?)?/i, '');
             emailDraft.body = `Hi ${recipientFirst},\n\n${body}`;
+        }
+
+        // ENFORCE SIGNATURE
+        // Ensure "Best, [Sender]" is always at the end
+        const explicitSenderName = storedSenderName || 'Pranav'; // Fallback for debugging if needed, though storedSenderName should be there
+        if (explicitSenderName) {
+            let body = emailDraft.body.trim();
+
+            // Remove existing signatures (Best, Regards, Cheers, etc.) followed by name or end of string
+            // Regex handles:
+            // 1. "Best,\nName"
+            // 2. "Best,\n" (trailing)
+            // 3. "Best," (end of string)
+            const signatureRegex = /\n\n(Best|Regards|Sincerely|Thanks|Cheers|Warmly),?\s*([^\n]*)?$/i;
+            body = body.replace(signatureRegex, '');
+
+            // Also handle just the name if it's the last line
+            const nameRegex = new RegExp(`\\n\\n${explicitSenderName}$`, 'i');
+            body = body.replace(nameRegex, '');
+
+            // Append standardized signature
+            emailDraft.body = `${body.trim()}\n\nBest,\n${explicitSenderName}`;
         }
 
         // Debug logging for generated draft
@@ -1760,3 +1774,94 @@ async function createDraft(token, rawMessage) {
     }
     return data;
 }
+
+// --- CLOUD SYNC LOGIC ---
+
+/**
+ * Sync saved profiles to the cloud
+ * @param {Array} profiles - List of profiles to sync
+ */
+async function syncProfilesToCloud(profiles) {
+    if (!profiles || profiles.length === 0) return;
+
+    try {
+        const gmailToken = await getAuthToken(); // Reuse existing token getter
+        if (!gmailToken) return;
+
+
+        // We send the whole batch for upsert (simple & robust)
+        const response = await fetchWithTimeout(`${CONFIG.getApiUrl().replace('/api/generate-email', '/api/sync-profiles')}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${gmailToken}`
+            },
+            body: JSON.stringify({
+                action: 'upsert_batch',
+                profiles: profiles
+            })
+        }, 30000);
+
+        if (!response.ok) {
+            console.error('Failed to sync profiles:', await response.text());
+        } else {
+        }
+    } catch (e) {
+        console.error('Error syncing profiles:', e);
+    }
+}
+
+// Debounce sync to prevent spamming API
+let syncTimer = null;
+const debouncedSync = (profiles) => {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+        syncProfilesToCloud(profiles);
+    }, 2000); // 2 second delay
+};
+
+// --- TEMPLATE SYNC LOGIC ---
+
+/**
+ * Sync email templates to the cloud
+ * @param {Array} templates - List of templates to sync
+ */
+async function syncTemplatesToCloud(templates) {
+    if (!templates || templates.length === 0) return;
+
+    try {
+        const gmailToken = await getAuthToken();
+        if (!gmailToken) return;
+
+
+        const response = await fetchWithTimeout(`${CONFIG.getApiUrl().replace('/api/generate-email', '/api/sync-templates')}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${gmailToken}`
+            },
+            body: JSON.stringify({
+                action: 'upsert_batch',
+                templates: templates
+            })
+        }, 30000);
+
+        if (!response.ok) {
+            console.error('Failed to sync templates:', await response.text());
+        } else {
+        }
+    } catch (e) {
+        console.error('Error syncing templates:', e);
+    }
+}
+
+
+
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local') {
+        if (changes.savedProfiles) {
+            const newProfiles = changes.savedProfiles.newValue;
+            if (newProfiles) debouncedSync(newProfiles);
+        }
+    }
+});

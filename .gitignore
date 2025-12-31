@@ -89,3 +89,5 @@ extension-key.pem
 get-extension-id.js
 .vercel
 *.sh
+sql_migrations/
+*.backup
