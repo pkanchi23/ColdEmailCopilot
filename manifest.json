@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "ColdEmailCopilot",
-  "version": "1.0",
-  "description": "Generate personalized cold emails from LinkedIn profiles.",
+  "version": "1.0.0",
+  "description": "AI-powered cold email generation from LinkedIn profiles. Craft personalized outreach emails with GPT-4 and Claude.",
+  "author": "Pranav Kanchi",
+  "homepage_url": "https://cold-email-copilot.vercel.app",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7v7f572LyScTc1QI+660u2i0DTSLy+52devsvCLvLxOXcBOTinKZXY7U/hkAU8QWze+8dlae78y4Y/W1v2lhUc7mSC49YXqXxyzNBkn2xDo+suJRsNXGl9LlOK6p9eOgCF4rnUWOg27yTT1wsnN4oglDaraI7ebjtmUFWwzzzwHLuYVUB1sP0c/X0H9Ejdu8pdjx961+z1Mp2BxZ9vqUw+tTUi6yQgGt8YHpAFLm1q+P+6SzDeHqjCqA2aNaptl/WgELF1Y1yT9XVoEGcRGMhDH9+c2yso0z7hMmzqIx+ITgjaQY3k77sgSkWVJR+EQQMQzTe8pZrm1W/Gzcimc5AQIDAQAB",
   "permissions": [
     "storage",

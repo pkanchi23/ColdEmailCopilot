@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <title>ColdEmailCopilot Settings</title>
   <style>
     body {
@@ -91,6 +92,77 @@
       color: #6b7280;
       margin-top: 8px;
     }
+
+    /* Dark Mode Overrides */
+    body.dark-mode {
+      background-color: #111827;
+      /* Darker background */
+      color: #f3f4f6;
+    }
+
+    body.dark-mode .container {
+      background-color: #1f2937;
+      /* Lighter container */
+    }
+
+    body.dark-mode h1 {
+      color: #f3f4f6;
+      border-bottom-color: #374151;
+    }
+
+    body.dark-mode label {
+      color: #d1d5db;
+    }
+
+    body.dark-mode input,
+    body.dark-mode textarea,
+    body.dark-mode select {
+      background-color: #374151;
+      border-color: #4b5563;
+      color: #f3f4f6;
+    }
+
+    body.dark-mode .info {
+      color: #9ca3af;
+    }
+
+    body.dark-mode #authStatus,
+    body.dark-mode .form-group>div[style*="background: #f9fafb"],
+    body.dark-mode #cloudStats {
+      /* Targeting usage stats & auth boxes */
+      background-color: #111827 !important;
+      border-color: #374151 !important;
+    }
+
+    body.dark-mode .provider-card {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+      color: #f3f4f6;
+    }
+
+    body.dark-mode strong {
+      color: #f3f4f6;
+    }
+
+    /* Welcome Message Dark Mode */
+    body.dark-mode #welcomeMessage {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+    }
+
+    body.dark-mode #welcomeMessage h3 {
+      color: #7dd3fc !important;
+      /* Sky-300 */
+    }
+
+    body.dark-mode #welcomeMessage p {
+      color: #d1d5db !important;
+      /* Gray-300 */
+    }
+
+    body.dark-mode #welcomeMessage p strong {
+      color: #f3f4f6 !important;
+    }
   </style>
 </head>
 
@@ -98,11 +170,24 @@
   <div class="container">
     <h1>ColdEmailCopilot Configuration</h1>
 
+    <!-- First-time user welcome message -->
+    <div id="welcomeMessage"
+      style="display: none; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+      <h3 style="margin: 0 0 10px 0; color: #0369a1; font-size: 16px;">👋 Welcome to ColdEmailCopilot!</h3>
+      <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151;">
+        To get started, fill out your "About Me" below and save your settings. Then navigate to any LinkedIn profile and
+        click the ColdEmailCopilot button to generate a personalized cold email.
+      </p>
+      <p style="margin: 0; font-size: 13px; color: #6b7280;">
+        <strong>Already have an account?</strong> Generate an email to sign in and sync your settings across devices.
+      </p>
+    </div>
+
     <div class="form-group">
       <label for="model">AI Model</label>
       <select id="model" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
+        <option value="claude-sonnet-4-20250514" selected>Claude 4.5 Sonnet (Anthropic)</option>
         <option value="gpt-5.2">GPT-5.2 (OpenAI)</option>
-        <option value="claude-sonnet-4-5">Claude 4.5 Sonnet (Anthropic)</option>
       </select>
       <input type="text" id="customModel" placeholder="Enter model name (e.g. gpt-5.2)"
         style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; margin-top: 8px; display: none; box-sizing: border-box;">
@@ -121,9 +206,24 @@
 
     <div class="form-group">
       <label for="userContext">About Me / Value Proposition</label>
+
       <textarea id="userContext" rows="5" placeholder="I am a... My company does... We are looking to..."></textarea>
       <p class="info">This context will be provided to the AI to help write the email from your perspective. <a href="#"
           id="openSetupHelper">Looking to set this up? Click here!</a></p>
+
+      <!-- Resume Upload Section (Below textarea) -->
+      <div style="margin-top: 15px; padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+        <div style="font-weight: 500; margin-bottom: 10px; color: #374151;">📄 Auto-Generate from Resume</div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <input type="file" id="resumeFile" accept=".txt,.pdf"
+            style="flex: 1; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+          <button type="button" id="uploadResume"
+            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; font-weight: 500;">
+            Generate Profile
+          </button>
+        </div>
+        <div id="resumeStatus" style="font-size: 12px; color: #6b7280; min-height: 16px;"></div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -179,32 +279,25 @@
         if you need access.</p>
     </div>
 
-    <!-- Usage Statistics -->
+    <!-- Cloud Dashboard -->
     <div class="form-group" style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-      <label>Usage Statistics (Local)</label>
-      <div style="padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div>
-            <strong>Requests:</strong> <span id="statsRequests">0</span>
-          </div>
-          <div>
-            <strong>Total Tokens:</strong> <span id="statsTotalTokens">0</span>
-          </div>
-        </div>
-        <div style="margin-top: 10px; font-size: 12px; color: #6b7280;">
-          <div>Input Tokens: <span id="statsInputTokens">0</span></div>
-          <div>Output Tokens: <span id="statsOutputTokens">0</span></div>
-        </div>
-        <button id="resetStats" style="margin-top: 12px; padding: 6px 12px; font-size: 12px; background: #ef4444;">Reset
-          Statistics</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <label style="margin: 0;">Total Emails Generated</label>
+        <span id="planBadge"
+          style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">LOADING...</span>
       </div>
-    </div>
 
-    <!-- OpenAI API Key (Optional) -->
-    <div class="form-group">
-      <label for="apiKey">OpenAI API Key (Optional)</label>
-      <input type="password" id="apiKey" placeholder="sk-...">
-      <p class="info">Only required if you want to use GPT models. Claude models use the centralized proxy.</p>
+      <div id="cloudStats" style="padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+        <div style="font-size: 24px; font-weight: 700; color: #111827; text-align: center;">
+          <span id="totalEmails">0</span>
+          <span style="font-size: 12px; color: #6b7280; font-weight: 400; display: block; margin-top: 4px;">emails sent
+            successfully</span>
+        </div>
+        <button id="refreshStats"
+          style="margin-top: 12px; width: 100%; padding: 6px; font-size: 12px; background: #fff; border: 1px solid #d1d5db; color: #374151; border-radius: 4px; cursor: pointer;">
+          Refresh Count
+        </button>
+      </div>
     </div>
 
     <!-- Developer Settings -->
@@ -388,6 +481,7 @@ OUTPUT REQUIREMENTS
       background-color: #059669;
     }
   </style>
+  <script src="config.js"></script>
   <script src="utils.js"></script>
   <script src="options.js"></script>
 </body>

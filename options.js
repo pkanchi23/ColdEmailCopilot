@@ -21,7 +21,6 @@ function applyDarkMode(enabled) {
  * Saves options to chrome.storage
  */
 const saveOptions = () => {
-  const apiKey = document.getElementById('apiKey').value;
   const userContext = document.getElementById('userContext').value;
   const modelSelect = document.getElementById('model').value;
   const customModel = document.getElementById('customModel').value;
@@ -44,7 +43,6 @@ const saveOptions = () => {
 
   chrome.storage.local.set(
     {
-      openAiApiKey: apiKey,
       userContext: userContext,
       model: model,
       tone: tone,
@@ -55,12 +53,54 @@ const saveOptions = () => {
       darkMode: darkMode,
       webhookUrl: webhookUrl
     },
-    () => {
-      showStatus('Settings saved successfully!', 'success');
+    async () => {
       // Reinitialize logger with new debug mode
       Logger.init();
       // Apply dark mode
       applyDarkMode(darkMode);
+
+      // --- Cloud Sync ---
+      // Only sync if already logged in, don't trigger OAuth from here
+      try {
+        const { gmailToken } = await chrome.storage.local.get('gmailToken');
+
+        // If no token, save locally only (silently)
+        if (!gmailToken) {
+          showStatus('Settings saved.', 'success');
+          return;
+        }
+
+        if (gmailToken) {
+          const updateUrl = `${CONFIG.VERCEL_API_URL}/api/update-settings`;
+
+          const response = await fetch(updateUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${gmailToken}`
+            },
+            body: JSON.stringify({
+              userContext,
+              exampleEmail,
+              tone,
+              model
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            console.error('Cloud sync failed:', errData);
+            showStatus('Saved locally, but cloud sync failed: ' + (errData.message || 'Unknown error'), 'error');
+          } else {
+            showStatus('Settings saved and synced to cloud!', 'success');
+          }
+        } else {
+          showStatus('Settings saved locally. Sign in to sync.', 'success');
+        }
+      } catch (e) {
+        console.error('Cloud sync error:', e);
+        showStatus('Saved locally. Cloud sync offline.', 'warning');
+      }
     }
   );
 };
@@ -101,7 +141,6 @@ const checkAuthStatus = async () => {
           }
         }
       } catch (e) {
-        console.log('Could not verify token:', e);
       }
     }
 
@@ -122,9 +161,8 @@ const checkAuthStatus = async () => {
 const restoreOptions = () => {
   chrome.storage.local.get(
     {
-      openAiApiKey: '',
       userContext: '',
-      model: 'gpt-5.2',
+      model: 'claude-sonnet-4-20250514',
       tone: 'Casual & Friendly',
       exampleEmail: '',
       financeRecruitingMode: false,
@@ -134,7 +172,6 @@ const restoreOptions = () => {
       webhookUrl: ''
     },
     (items) => {
-      document.getElementById('apiKey').value = items.openAiApiKey;
       document.getElementById('userContext').value = items.userContext;
       document.getElementById('tone').value = items.tone;
       document.getElementById('exampleEmail').value = items.exampleEmail;
@@ -163,6 +200,14 @@ const restoreOptions = () => {
       // Check authentication status
       checkAuthStatus();
       loadUsageStats();
+
+      // Show welcome message for first-time users
+      chrome.storage.local.get(['hasSeenWelcome'], (result) => {
+        if (!result.hasSeenWelcome && !items.userContext) {
+          document.getElementById('welcomeMessage').style.display = 'block';
+          chrome.storage.local.set({ hasSeenWelcome: true });
+        }
+      });
     }
   );
 };
@@ -293,6 +338,130 @@ const processImportFile = async (event) => {
   }
 };
 
+// --- Cloud Stats ---
+async function fetchCloudStats() {
+  const { gmailToken } = await chrome.storage.local.get('gmailToken');
+  if (!gmailToken) {
+    const badge = document.getElementById('planBadge');
+    if (badge) badge.textContent = 'OFFLINE';
+    return;
+  }
+
+  const refreshBtn = document.getElementById('refreshStats');
+  if (refreshBtn) refreshBtn.textContent = 'Refreshing...';
+
+  try {
+    const response = await fetch(config.VERCEL_API_URL + '/api/get-usage', {
+      headers: {
+        'Authorization': `Bearer ${gmailToken}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch');
+
+    const data = await response.json();
+
+    // Update Plan Badge
+    const badge = document.getElementById('planBadge');
+    if (badge) {
+      badge.textContent = data.plan.toUpperCase();
+      badge.style.background = '#e0e7ff';
+      badge.style.color = '#4338ca';
+    }
+
+    // Update Total Emails
+    const total = (data.usage.openai.emails || 0) + (data.usage.anthropic.emails || 0);
+    const countDisplay = document.getElementById('totalEmails');
+    if (countDisplay) {
+      countDisplay.innerText = total;
+    }
+
+  } catch (e) {
+    console.error('Stats fetch error:', e);
+    const countDisplay = document.getElementById('totalEmails');
+    if (countDisplay) countDisplay.innerText = '-';
+  } finally {
+    if (refreshBtn) refreshBtn.textContent = 'Refresh Count';
+  }
+}
+
+
+/**
+ * Handle resume upload and auto-generate profile
+ */
+async function handleResumeUpload() {
+  const fileInput = document.getElementById('resumeFile');
+  const statusDiv = document.getElementById('resumeStatus');
+  const uploadBtn = document.getElementById('uploadResume');
+
+  const file = fileInput.files[0];
+  if (!file) {
+    statusDiv.textContent = '⚠️ Please select a resume file first';
+    statusDiv.style.color = '#dc2626';
+    return;
+  }
+
+  // Check file type
+  const validTypes = ['.txt', '.pdf'];
+  const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+  if (!validTypes.includes(fileExt)) {
+    statusDiv.textContent = '⚠️ Only .txt and .pdf files are supported';
+    statusDiv.style.color = '#dc2626';
+    return;
+  }
+
+  // Get auth token
+  const { gmailToken } = await chrome.storage.local.get('gmailToken');
+  if (!gmailToken) {
+    statusDiv.textContent = '⚠️ Please sign in first';
+    statusDiv.style.color = '#dc2626';
+    return;
+  }
+
+  // Update UI
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Processing...';
+  statusDiv.textContent = 'Uploading and generating profile...';
+  statusDiv.style.color = '#2563eb';
+
+  try {
+    // Create FormData
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    const response = await fetch(CONFIG.VERCEL_API_URL + '/api/process-resume', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${gmailToken}`
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Upload failed');
+    }
+
+    // Populate textarea with generated profile
+    document.getElementById('userContext').value = data.generated_profile;
+
+    statusDiv.textContent = `✅ Profile generated! (${data.resume_length} chars processed)`;
+    statusDiv.style.color = '#059669';
+
+    // Auto-save to storage
+    chrome.storage.local.set({ userContext: data.generated_profile });
+
+  } catch (error) {
+    console.error('Resume upload error:', error);
+    statusDiv.textContent = `❌ Error: ${error.message}`;
+    statusDiv.style.color = '#dc2626';
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = '📄 Auto-Generate from Resume';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   setupModelSelect();
@@ -302,19 +471,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('exportSettings').addEventListener('click', handleExportSettings);
   document.getElementById('importSettings').addEventListener('click', handleImportSettings);
   document.getElementById('importFile').addEventListener('change', processImportFile);
-  document.getElementById('resetStats').addEventListener('click', resetStats);
+
+  // Resume upload handler
+  document.getElementById('uploadResume').addEventListener('click', handleResumeUpload);
+
+  // Cloud Dashboard listeners
+  document.getElementById('refreshStats')?.addEventListener('click', fetchCloudStats);
+
+  // Initial fetch if signed in
+  chrome.storage.local.get('gmailToken', ({ gmailToken }) => {
+    if (gmailToken) fetchCloudStats();
+  });
 });
 document.getElementById('save').addEventListener('click', saveOptions);
-
-function resetStats() {
-  if (confirm('Are you sure you want to reset your usage statistics?')) {
-    chrome.storage.local.set({
-      stats_requestCount: 0,
-      stats_inputTokens: 0,
-      stats_outputTokens: 0
-    }, () => {
-      loadUsageStats(); // Refresh UI
-      showStatus('Statistics reset.', 'success');
-    });
-  }
-}

@@ -11,21 +11,10 @@
     }
 })();
 
-// ==========================
 // UTILITIES
 // ==========================
 
-// XSS protection: Escape HTML to prevent injection attacks
-const escapeHtml = (unsafe) => {
-    if (!unsafe) return '';
-    return unsafe
-        .toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-};
+// escapeHtml is provided by utils.js
 
 // Simple notification system for popup
 const showNotification = (message, type = 'info') => {
@@ -182,14 +171,21 @@ const initPopup = async () => {
 
                     if (viewId === 'saved') {
                         loadSavedProfiles();
-                    } else if (viewId === 'templates') {
-                        loadTemplates();
                     }
                 });
             });
             console.log('Tab listeners attached');
         } else {
             console.error('No tabs found');
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('searchProfiles');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                currentSearchQuery = e.target.value;
+                loadSavedProfiles();
+            });
         }
 
     } catch (e) {
@@ -334,17 +330,6 @@ const loadSavedProfiles = async () => {
     });
 };
 
-// Search functionality
-document.addEventListener('DOMContentLoaded', async () => {
-    const searchInput = document.getElementById('searchProfiles');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            currentSearchQuery = e.target.value;
-            loadSavedProfiles();
-        });
-    }
-
-});
 
 // Export functionality
 document.getElementById('exportBtn')?.addEventListener('click', async () => {
@@ -432,106 +417,4 @@ document.getElementById('importFile')?.addEventListener('change', async (e) => {
 
     // Reset file input
     e.target.value = '';
-});
-
-// --- Template Library ---
-const loadTemplates = async () => {
-    const { emailTemplates = [] } = await chrome.storage.local.get('emailTemplates');
-    const container = document.getElementById('templateList');
-    const emptyState = document.getElementById('templatesEmptyState');
-
-    container.innerHTML = '';
-
-    if (emailTemplates.length === 0) {
-        emptyState.style.display = 'block';
-        return;
-    }
-
-    emptyState.style.display = 'none';
-
-    // Show most recent first
-    emailTemplates.slice().reverse().forEach((template, index) => {
-        const div = document.createElement('div');
-        div.className = 'saved-item';
-        div.innerHTML = `
-            <div class="saved-name">${escapeHtml(template.name)}</div>
-            <div class="saved-headline" style="font-size: 11px; margin-bottom: 4px;">
-                Subject: ${escapeHtml(template.subject)}
-            </div>
-            <div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px;">
-                ${escapeHtml(template.category || 'General')} • Saved ${new Date(template.createdAt).toLocaleDateString()}
-            </div>
-            <div class="saved-actions">
-                <button class="use-template-btn" style="background: #2563eb; color: white;">Use Template</button>
-                <button class="view-template-btn" style="background: #6b7280; color: white;">View</button>
-                <button class="delete-template-btn" style="background: #fee2e2; color: #991b1b;">Delete</button>
-            </div>
-        `;
-
-        div.querySelector('.use-template-btn').addEventListener('click', async () => {
-            await chrome.storage.local.set({ activeTemplate: template });
-            showNotification(`Template "${template.name}" will be used for next generation`, 'success');
-        });
-
-        div.querySelector('.view-template-btn').addEventListener('click', () => {
-            const viewOverlay = document.createElement('div');
-            viewOverlay.style.cssText = `
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.5); display: flex; align-items: center;
-                justify-content: center; z-index: 10000; padding: 20px;
-            `;
-            viewOverlay.innerHTML = `
-                <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; max-height: 80vh; overflow-y: auto;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 14px;">Template Preview</h3>
-                    <p style="margin: 0 0 8px 0; font-size: 12px;"><strong>Subject:</strong> ${escapeHtml(template.subject)}</p>
-                    <p style="margin: 0 0 8px 0; font-size: 12px;"><strong>Body:</strong></p>
-                    <pre style="white-space: pre-wrap; font-size: 11px; background: #f3f4f6; padding: 10px; border-radius: 4px; margin: 0;">${escapeHtml(template.body)}</pre>
-                    <button id="closeView" style="margin-top: 12px; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Close</button>
-                </div>
-            `;
-            document.body.appendChild(viewOverlay);
-            viewOverlay.querySelector('#closeView').addEventListener('click', () => viewOverlay.remove());
-            viewOverlay.addEventListener('click', (e) => { if (e.target === viewOverlay) viewOverlay.remove(); });
-        });
-
-        div.querySelector('.delete-template-btn').addEventListener('click', async () => {
-            const { emailTemplates } = await chrome.storage.local.get('emailTemplates');
-            emailTemplates.splice(emailTemplates.length - 1 - index, 1);
-            await chrome.storage.local.set({ emailTemplates });
-            loadTemplates();
-        });
-
-        container.appendChild(div);
-    });
-};
-
-// Save last generated email as template
-document.getElementById('saveTemplateBtn')?.addEventListener('click', async () => {
-    const { lastGeneratedEmail } = await chrome.storage.local.get('lastGeneratedEmail');
-
-    if (!lastGeneratedEmail) {
-        showNotification('No email has been generated yet. Generate an email first!', 'warning');
-        return;
-    }
-
-    const name = await showPrompt('Enter a name for this template:', 'My Template');
-    if (!name) return;
-
-    const category = await showPrompt('Category (optional):', 'General') || 'General';
-
-    const template = {
-        id: Date.now(),
-        name,
-        category,
-        subject: lastGeneratedEmail.subject,
-        body: lastGeneratedEmail.body,
-        createdAt: new Date().toISOString()
-    };
-
-    const { emailTemplates = [] } = await chrome.storage.local.get('emailTemplates');
-    emailTemplates.push(template);
-    await chrome.storage.local.set({ emailTemplates });
-
-    showNotification('Template saved successfully!', 'success');
-    loadTemplates();
 });

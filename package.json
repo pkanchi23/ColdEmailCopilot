@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.2"
+    "@neondatabase/serverless": "^1.0.2",
+    "openai": "^6.15.0",
+    "pdf-parse": "^2.4.5"
   }
 }
