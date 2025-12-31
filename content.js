@@ -646,6 +646,40 @@ const scrapeProfile = () => {
     return profileData;
 };
 
+/**
+ * Extract company name from profile data
+ * Looks at current experience to find company name
+ */
+const extractCompanyFromProfile = (profileData) => {
+    // Try to get from the first experience entry
+    if (profileData.experience) {
+        const experiences = profileData.experience.split('\n');
+        if (experiences.length > 0) {
+            // Format is typically "Role at Company (Duration)" or "Role at Company"
+            const firstExp = experiences[0];
+            const atMatch = firstExp.match(/at\s+(.+?)(?:\s*\(|$)/i);
+            if (atMatch && atMatch[1]) {
+                return atMatch[1].trim();
+            }
+        }
+    }
+
+    // Fallback: try to extract from headline
+    if (profileData.headline) {
+        // Common patterns: "Role at Company" or "Role | Company"
+        const atMatch = profileData.headline.match(/(?:at|@)\s+(.+?)(?:\s*[|\-]|$)/i);
+        if (atMatch && atMatch[1]) {
+            return atMatch[1].trim();
+        }
+        const pipeMatch = profileData.headline.match(/\|\s*(.+?)$/);
+        if (pipeMatch && pipeMatch[1]) {
+            return pipeMatch[1].trim();
+        }
+    }
+
+    return 'Unknown Company';
+};
+
 // ==========================
 // MESSAGING
 // ==========================
@@ -900,6 +934,10 @@ const createModal = () => {
             </div>
             <div class="cec-modal-footer">
                 <button class="cec-btn cec-btn-secondary" id="cec-cancel">Cancel</button>
+                <button class="cec-btn" id="cec-test-email" style="background: #6366f1; color: white;">
+                    <span class="btn-text">🔍 Test Email Lookup</span>
+                    <span class="btn-spinner" style="display: none;">Finding...</span>
+                </button>
                 <button class="cec-btn cec-btn-primary" id="cec-submit">
                     <span class="btn-text">Generate Draft</span>
                     <span class="btn-spinner" style="display: none;">
@@ -946,6 +984,48 @@ const openModal = async () => {
         overlay.querySelector('.cec-close-btn').addEventListener('click', close);
         overlay.querySelector('#cec-cancel').addEventListener('click', close);
         overlay.querySelector('#cec-submit').addEventListener('click', submit);
+
+        // Test Email Lookup button handler
+        overlay.querySelector('#cec-test-email').addEventListener('click', async () => {
+            const testBtn = overlay.querySelector('#cec-test-email');
+            const btnText = testBtn.querySelector('.btn-text');
+            const btnSpinner = testBtn.querySelector('.btn-spinner');
+
+            // Show loading state
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline-block';
+            testBtn.disabled = true;
+
+            try {
+                const profileData = scrapeProfile();
+                const company = extractCompanyFromProfile(profileData);
+
+                const response = await chrome.runtime.sendMessage({
+                    action: 'findEmail',
+                    data: {
+                        name: profileData.name,
+                        company: company,
+                        linkedinUrl: window.location.href
+                    }
+                });
+
+                if (response && response.email) {
+                    showToast(`✅ Email found: ${response.email} (via ${response.source}, confidence: ${response.confidence})`, 'success', 10000);
+                } else if (response && response.success === false) {
+                    showToast('❌ Could not find email address', 'warning', 5000);
+                } else if (response && response.error) {
+                    showToast(`❌ Error: ${response.error}`, 'error', 5000);
+                }
+            } catch (error) {
+                console.error('Email lookup error:', error);
+                showToast(`❌ Error: ${error.message}`, 'error', 5000);
+            } finally {
+                // Reset button state
+                btnText.style.display = 'inline-block';
+                btnSpinner.style.display = 'none';
+                testBtn.disabled = false;
+            }
+        });
 
         // Keyboard shortcuts
         overlay.querySelector('#cec-context').addEventListener('keydown', (e) => {

@@ -1,0 +1,410 @@
+{
+    "google.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "amazon.com": {
+        "pattern": "{first}{last}",
+        "confidence": "high"
+    },
+    "microsoft.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "apple.com": {
+        "pattern": "{first}_{last}",
+        "confidence": "high"
+    },
+    "meta.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "facebook.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "netflix.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "salesforce.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "oracle.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "ibm.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "intel.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "cisco.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "adobe.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "uber.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "lyft.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "airbnb.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "stripe.com": {
+        "pattern": "{first}@stripe.com",
+        "confidence": "high"
+    },
+    "shopify.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "slack.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "zoom.us": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "dropbox.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "twitter.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "x.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "medium"
+    },
+    "linkedin.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "snap.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "pinterest.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "reddit.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "spotify.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "tesla.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "spacex.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "nvidia.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "amd.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "qualcomm.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "vmware.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "servicenow.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "workday.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "palantir.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "snowflake.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "databricks.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "mongodb.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "datadog.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "cloudflare.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "twilio.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "hashicorp.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "atlassian.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "jpmorganchase.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "jpmorgan.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "goldmansachs.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "gs.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "morganstanley.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "bankofamerica.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "bofa.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "citi.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "citigroup.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "wellsfargo.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "barclays.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "ubs.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "credit-suisse.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "hsbc.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "deutschebank.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "db.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "blackrock.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "blackstone.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "kkr.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "carlyle.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "apolloglobal.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "bridgewater.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "citadel.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "twosigma.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "deshaw.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "janestreet.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "hrt.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "medium"
+    },
+    "mckinsey.com": {
+        "pattern": "{first}_{last}",
+        "confidence": "high"
+    },
+    "bcg.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "bain.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "deloitte.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "pwc.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "ey.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "kpmg.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "accenture.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "dell.com": {
+        "pattern": "{first}_{last}",
+        "confidence": "high"
+    },
+    "hp.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "lenovo.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "samsung.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "lg.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "medium"
+    },
+    "sony.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "walmart.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "target.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "costco.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "homedepot.com": {
+        "pattern": "{first}_{last}",
+        "confidence": "high"
+    },
+    "lowes.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "bestbuy.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "nike.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "adidas.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "cocacola.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "pepsico.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "pg.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "jnj.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "pfizer.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "merck.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "abbvie.com": {
+        "pattern": "{first}.{last}",
+        "confidence": "high"
+    },
+    "default": {
+        "pattern": "{first}.{last}",
+        "confidence": "low"
+    }
+}

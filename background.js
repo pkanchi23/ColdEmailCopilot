@@ -139,8 +139,65 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: false, error: userMessage });
             });
         return true; // Will respond asynchronously
+    } else if (request.action === 'findEmail') {
+        handleFindEmail(request.data)
+            .then(sendResponse)
+            .catch((error) => {
+                Logger.error('Email lookup failed:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+        return true; // Will respond asynchronously
     }
 });
+
+/**
+ * Handle email lookup request
+ * @param {Object} requestData - Request data containing name and company
+ * @returns {Promise<Object>} Email lookup result
+ */
+async function handleFindEmail(requestData) {
+    try {
+        // Check online status
+        requireOnline();
+
+        // Get Gmail token for auth
+        const gmailToken = await getGmailToken();
+        if (!gmailToken) {
+            throw new Error('Authentication required. Please sign in first.');
+        }
+
+        // Check if Apollo is enabled
+        const { apolloEnabled } = await chrome.storage.local.get('apolloEnabled');
+
+        // Call Vercel API for email lookup
+        const response = await fetchWithTimeout(`${CONFIG.VERCEL_API_URL}/api/find-email`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${gmailToken}`
+            },
+            body: JSON.stringify({
+                name: requestData.name,
+                company: requestData.company,
+                linkedinUrl: requestData.linkedinUrl,
+                apolloEnabled: apolloEnabled || false
+            })
+        }, 15000); // 15 second timeout
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        Logger.log('Email lookup result:', data);
+
+        return data;
+    } catch (error) {
+        Logger.error('Email lookup error:', error);
+        throw error;
+    }
+}
 
 /**
  * Handle draft generation request

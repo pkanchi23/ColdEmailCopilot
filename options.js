@@ -33,6 +33,7 @@ const saveOptions = () => {
   const webGrounding = document.getElementById('webGrounding').checked;
   const darkMode = document.getElementById('darkMode').checked;
   const webhookUrl = document.getElementById('webhookUrl').value;
+  // Apollo is handled separately via consent flow, not saved here
 
   // No local API key needed for Claude (handled by Vercel proxy)
 
@@ -173,7 +174,9 @@ const restoreOptions = () => {
       debugMode: false,
       webGrounding: false,
       darkMode: false,
-      webhookUrl: ''
+      webhookUrl: '',
+      apolloEnabled: false,
+      apolloConsented: false
     },
     (items) => {
       document.getElementById('userContext').value = items.userContext;
@@ -185,9 +188,13 @@ const restoreOptions = () => {
       document.getElementById('webGrounding').checked = items.webGrounding;
       document.getElementById('darkMode').checked = items.darkMode;
       document.getElementById('webhookUrl').value = items.webhookUrl || '';
+      document.getElementById('apolloEnabled').checked = items.apolloEnabled || false;
 
       // Apply dark mode on load
       applyDarkMode(items.darkMode);
+
+      // Set up Apollo consent flow
+      setupApolloConsentFlow(items.apolloConsented);
 
       // Check if saved model is in the dropdown
       const modelSelect = document.getElementById('model');
@@ -231,6 +238,86 @@ const restoreOptions = () => {
 //     document.getElementById('statsOutputTokens').textContent = outputTokens;
 //   });
 // }
+
+/**
+ * Set up Apollo.io consent flow
+ */
+function setupApolloConsentFlow(alreadyConsented) {
+  const checkbox = document.getElementById('apolloEnabled');
+  const modal = document.getElementById('apolloConsentModal');
+  const cancelBtn = document.getElementById('cancelConsent');
+  const acceptBtn = document.getElementById('acceptConsent');
+  const consentBoxes = [
+    document.getElementById('consent1'),
+    document.getElementById('consent2'),
+    document.getElementById('consent3'),
+    document.getElementById('consent4')
+  ];
+
+  // Update Accept button state when consent checkboxes change
+  const updateAcceptButton = () => {
+    const allChecked = consentBoxes.every(cb => cb.checked);
+    acceptBtn.disabled = !allChecked;
+    acceptBtn.style.opacity = allChecked ? '1' : '0.5';
+    acceptBtn.style.cursor = allChecked ? 'pointer' : 'not-allowed';
+  };
+
+  consentBoxes.forEach(cb => {
+    cb.addEventListener('change', updateAcceptButton);
+  });
+
+  // Handle checkbox toggle
+  checkbox.addEventListener('change', function () {
+    if (this.checked) {
+      // Check if already consented
+      if (alreadyConsented) {
+        // Already consented, enable directly
+        chrome.storage.local.set({ apolloEnabled: true });
+        showStatus('Apollo.io email lookup enabled.', 'success');
+      } else {
+        // Show consent modal
+        modal.style.display = 'flex';
+        // Reset consent checkboxes
+        consentBoxes.forEach(cb => cb.checked = false);
+        updateAcceptButton();
+        this.checked = false; // Uncheck until consent is given
+      }
+    } else {
+      // Disable Apollo
+      chrome.storage.local.set({ apolloEnabled: false });
+      showStatus('Apollo.io email lookup disabled.', 'info');
+    }
+  });
+
+  // Cancel button
+  cancelBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    checkbox.checked = false;
+    chrome.storage.local.set({ apolloEnabled: false });
+  });
+
+  // Accept button
+  acceptBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    checkbox.checked = true;
+    chrome.storage.local.set({
+      apolloEnabled: true,
+      apolloConsented: true,
+      apolloConsentDate: new Date().toISOString()
+    });
+    alreadyConsented = true; // Update local state
+    showStatus('Apollo.io email lookup enabled. Legal consent recorded.', 'success');
+  });
+
+  // Close modal on outside click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      checkbox.checked = false;
+    }
+  });
+}
+
 
 
 const showStatus = (msg, type) => {
