@@ -166,7 +166,7 @@ async function handleFindEmail(requestData) {
 
         // Get Gmail token for auth
         console.log('[FindEmail] Step 2: Getting Gmail token...');
-        const gmailToken = await getGmailToken();
+        const gmailToken = await getAuthToken();
         if (!gmailToken) {
             console.error('[FindEmail] No Gmail token available');
             throw new Error('Authentication required. Please sign in first.');
