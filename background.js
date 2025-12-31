@@ -156,21 +156,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * @returns {Promise<Object>} Email lookup result
  */
 async function handleFindEmail(requestData) {
+    console.log('[FindEmail] Starting email lookup with data:', requestData);
+
     try {
         // Check online status
+        console.log('[FindEmail] Step 1: Checking online status...');
         requireOnline();
+        console.log('[FindEmail] Online check passed');
 
         // Get Gmail token for auth
+        console.log('[FindEmail] Step 2: Getting Gmail token...');
         const gmailToken = await getGmailToken();
         if (!gmailToken) {
+            console.error('[FindEmail] No Gmail token available');
             throw new Error('Authentication required. Please sign in first.');
         }
+        console.log('[FindEmail] Gmail token obtained (length:', gmailToken.length, ')');
 
         // Check if Apollo is enabled
         const { apolloEnabled } = await chrome.storage.local.get('apolloEnabled');
+        console.log('[FindEmail] Apollo enabled:', apolloEnabled);
 
         // Call Vercel API for email lookup
-        const response = await fetchWithTimeout(`${CONFIG.VERCEL_API_URL}/api/find-email`, {
+        const apiUrl = `${CONFIG.VERCEL_API_URL}/api/find-email`;
+        console.log('[FindEmail] Step 3: Calling API:', apiUrl);
+        console.log('[FindEmail] Request body:', JSON.stringify({
+            name: requestData.name,
+            company: requestData.company,
+            linkedinUrl: requestData.linkedinUrl,
+            apolloEnabled: apolloEnabled || false
+        }));
+
+        const response = await fetchWithTimeout(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -184,16 +201,28 @@ async function handleFindEmail(requestData) {
             })
         }, 15000); // 15 second timeout
 
+        console.log('[FindEmail] API response status:', response.status);
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorText = await response.text();
+            console.error('[FindEmail] API error response:', errorText);
+            let errorData = {};
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { message: errorText };
+            }
             throw new Error(errorData.message || `API error: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('[FindEmail] API response data:', data);
         Logger.log('Email lookup result:', data);
 
         return data;
     } catch (error) {
+        console.error('[FindEmail] Error caught:', error.message);
+        console.error('[FindEmail] Error stack:', error.stack);
         Logger.error('Email lookup error:', error);
         throw error;
     }

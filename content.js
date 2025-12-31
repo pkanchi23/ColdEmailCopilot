@@ -991,15 +991,26 @@ const openModal = async () => {
             const btnText = testBtn.querySelector('.btn-text');
             const btnSpinner = testBtn.querySelector('.btn-spinner');
 
+            console.log('[TestEmail] Button clicked, starting email lookup...');
+
             // Show loading state
             btnText.style.display = 'none';
             btnSpinner.style.display = 'inline-block';
             testBtn.disabled = true;
 
             try {
+                console.log('[TestEmail] Scraping profile...');
                 const profileData = scrapeProfile();
-                const company = extractCompanyFromProfile(profileData);
+                console.log('[TestEmail] Profile data:', {
+                    name: profileData.name,
+                    headline: profileData.headline,
+                    experience: profileData.experience?.substring(0, 100) + '...'
+                });
 
+                const company = extractCompanyFromProfile(profileData);
+                console.log('[TestEmail] Extracted company:', company);
+
+                console.log('[TestEmail] Sending findEmail message to background...');
                 const response = await chrome.runtime.sendMessage({
                     action: 'findEmail',
                     data: {
@@ -1009,21 +1020,32 @@ const openModal = async () => {
                     }
                 });
 
+                console.log('[TestEmail] Response from background:', response);
+
                 if (response && response.email) {
+                    console.log('[TestEmail] Success! Email found:', response.email);
                     showToast(`✅ Email found: ${response.email} (via ${response.source}, confidence: ${response.confidence})`, 'success', 10000);
                 } else if (response && response.success === false) {
-                    showToast('❌ Could not find email address', 'warning', 5000);
+                    console.log('[TestEmail] No email found, response:', response);
+                    showToast(`❌ Could not find email address: ${response.message || 'Unknown reason'}`, 'warning', 5000);
                 } else if (response && response.error) {
+                    console.error('[TestEmail] Error in response:', response.error);
                     showToast(`❌ Error: ${response.error}`, 'error', 5000);
+                } else {
+                    console.error('[TestEmail] Unexpected response:', response);
+                    showToast(`❌ Unexpected response - check console for details`, 'error', 5000);
                 }
             } catch (error) {
-                console.error('Email lookup error:', error);
+                console.error('[TestEmail] Exception caught:', error);
+                console.error('[TestEmail] Error message:', error.message);
+                console.error('[TestEmail] Error stack:', error.stack);
                 showToast(`❌ Error: ${error.message}`, 'error', 5000);
             } finally {
                 // Reset button state
                 btnText.style.display = 'inline-block';
                 btnSpinner.style.display = 'none';
                 testBtn.disabled = false;
+                console.log('[TestEmail] Button state reset');
             }
         });
 
