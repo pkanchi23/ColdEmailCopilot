@@ -124,16 +124,18 @@ export default async function handler(req, res) {
             const {
                 userContext: aboutMe,
                 exampleEmail,
+                generalInstructions,
                 tone: preferredTone,
                 model: preferredModel
             } = req.body;
 
             const query = `
-                INSERT INTO user_profiles (email, about_me, example_email, preferred_tone, preferred_model)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO user_profiles (email, about_me, example_email, general_instructions, preferred_tone, preferred_model)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (email) DO UPDATE SET
                     about_me = COALESCE(EXCLUDED.about_me, user_profiles.about_me),
                     example_email = COALESCE(EXCLUDED.example_email, user_profiles.example_email),
+                    general_instructions = COALESCE(EXCLUDED.general_instructions, user_profiles.general_instructions),
                     preferred_tone = COALESCE(EXCLUDED.preferred_tone, user_profiles.preferred_tone),
                     preferred_model = COALESCE(EXCLUDED.preferred_model, user_profiles.preferred_model),
                     updated_at = NOW()
@@ -144,6 +146,7 @@ export default async function handler(req, res) {
                 userEmail,
                 aboutMe || null,
                 exampleEmail || null,
+                generalInstructions || null,
                 preferredTone || null,
                 preferredModel || null
             ]);

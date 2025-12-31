@@ -27,6 +27,7 @@ const saveOptions = () => {
   const model = modelSelect === 'custom' ? customModel : modelSelect;
   const tone = document.getElementById('tone').value;
   const exampleEmail = document.getElementById('exampleEmail').value;
+  const generalInstructions = document.getElementById('generalInstructions').value;
   const financeRecruitingMode = document.getElementById('financeRecruitingMode').checked;
   const debugMode = document.getElementById('debugMode').checked;
   const webGrounding = document.getElementById('webGrounding').checked;
@@ -47,6 +48,7 @@ const saveOptions = () => {
       model: model,
       tone: tone,
       exampleEmail: exampleEmail,
+      generalInstructions: generalInstructions,
       financeRecruitingMode: financeRecruitingMode,
       debugMode: debugMode,
       webGrounding: webGrounding,
@@ -82,6 +84,7 @@ const saveOptions = () => {
             body: JSON.stringify({
               userContext,
               exampleEmail,
+              generalInstructions,
               tone,
               model
             })
@@ -165,6 +168,7 @@ const restoreOptions = () => {
       model: 'claude-sonnet-4-20250514',
       tone: 'Casual & Friendly',
       exampleEmail: '',
+      generalInstructions: '',
       financeRecruitingMode: false,
       debugMode: false,
       webGrounding: false,
@@ -175,6 +179,7 @@ const restoreOptions = () => {
       document.getElementById('userContext').value = items.userContext;
       document.getElementById('tone').value = items.tone;
       document.getElementById('exampleEmail').value = items.exampleEmail;
+      document.getElementById('generalInstructions').value = items.generalInstructions || '';
       document.getElementById('financeRecruitingMode').checked = items.financeRecruitingMode;
       document.getElementById('debugMode').checked = items.debugMode;
       document.getElementById('webGrounding').checked = items.webGrounding;
