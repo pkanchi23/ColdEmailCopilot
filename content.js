@@ -659,7 +659,10 @@ const extractCompanyFromProfile = (profileData) => {
             const firstExp = experiences[0];
             const atMatch = firstExp.match(/at\s+(.+?)(?:\s*\(|$)/i);
             if (atMatch && atMatch[1]) {
-                return atMatch[1].trim();
+                let company = atMatch[1].trim();
+                // Remove common LinkedIn suffixes like " · Full-time", " · Part-time", etc.
+                company = company.replace(/\s*[·•]\s*(Full-time|Part-time|Contract|Freelance|Internship|Self-employed).*$/i, '');
+                return company.trim();
             }
         }
     }
@@ -669,11 +672,17 @@ const extractCompanyFromProfile = (profileData) => {
         // Common patterns: "Role at Company" or "Role | Company"
         const atMatch = profileData.headline.match(/(?:at|@)\s+(.+?)(?:\s*[|\-]|$)/i);
         if (atMatch && atMatch[1]) {
-            return atMatch[1].trim();
+            let company = atMatch[1].trim();
+            // Remove LinkedIn suffixes
+            company = company.replace(/\s*[·•]\s*(Full-time|Part-time|Contract|Freelance|Internship|Self-employed).*$/i, '');
+            return company.trim();
         }
         const pipeMatch = profileData.headline.match(/\|\s*(.+?)$/);
         if (pipeMatch && pipeMatch[1]) {
-            return pipeMatch[1].trim();
+            let company = pipeMatch[1].trim();
+            // Remove LinkedIn suffixes
+            company = company.replace(/\s*[·•]\s*(Full-time|Part-time|Contract|Freelance|Internship|Self-employed).*$/i, '');
+            return company.trim();
         }
     }
 
