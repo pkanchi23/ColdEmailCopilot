@@ -208,7 +208,8 @@ async function apolloLookup(name, company, linkedinUrl) {
             requestBody.linkedin_url = linkedinUrl;
         }
 
-        if (DEBUG) console.log('Apollo API request:', requestBody);
+        console.log('=== APOLLO API CALL ===');
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
         const response = await fetch('https://api.apollo.io/v1/people/match', {
             method: 'POST',
@@ -220,14 +221,21 @@ async function apolloLookup(name, company, linkedinUrl) {
             body: JSON.stringify(requestBody)
         });
 
+        console.log('Apollo response status:', response.status);
+        const responseText = await response.text();
+        console.log('Apollo response body:', responseText);
+
         if (!response.ok) {
-            console.error('Apollo API error:', response.status, await response.text());
+            console.error('Apollo API error - Status:', response.status);
+            console.error('Apollo API error - Body:', responseText);
             return null;
         }
 
-        const data = await response.json();
+        const data = JSON.parse(responseText);
+        console.log('Apollo parsed data:', JSON.stringify(data, null, 2));
 
         if (data.person && data.person.email) {
+            console.log('✓ Apollo found email:', data.person.email);
             return {
                 email: data.person.email,
                 source: 'apollo',
@@ -235,9 +243,12 @@ async function apolloLookup(name, company, linkedinUrl) {
             };
         }
 
+        console.log('✗ Apollo returned data but no email found');
+        console.log('Person object:', data.person);
         return null;
     } catch (error) {
-        console.error('Apollo lookup error:', error);
+        console.error('Apollo lookup exception:', error.message);
+        console.error('Apollo error stack:', error.stack);
         return null;
     }
 }
