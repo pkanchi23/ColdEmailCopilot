@@ -4,6 +4,9 @@
  * Accepts resume upload, extracts text, generates "About Me" using AI
  */
 
+// Enable/disable debug logging
+const DEBUG = process.env.DEBUG === 'true';
+
 async function verifyGoogleToken(accessToken) {
     try {
         const response = await fetch(
@@ -92,10 +95,15 @@ export default async function handler(req, res) {
         const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 
         try {
-            const userExists = await checkUserExists(userEmail, pool);
-            if (!userExists) {
-                return res.status(403).json({ error: 'Forbidden', message: 'User not in database' });
-            }
+            // Auto-provision new users with free tier (same as generate-email.js)
+            const ensureUserQuery = `
+                INSERT INTO user_profiles (email, plan_tier)
+                VALUES ($1, 'free')
+                ON CONFLICT (email) DO NOTHING;
+            `;
+            await pool.query(ensureUserQuery, [userEmail]);
+
+            if (DEBUG) console.log('User ensured in database:', userEmail);
 
             // 3. Parse file upload
             let resumeText = '';
