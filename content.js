@@ -892,7 +892,7 @@ const createModal = () => {
             </div>
             <div class="cec-modal-body">
                 <label class="cec-label" for="cec-context">Special Instructions / Context (Optional)</label>
-                <textarea id="cec-context" class="cec-textarea" placeholder="e.g. Mention we met at the conference, or ask for a 15min call..."></textarea>
+                <textarea id="cec-context" class="cec-textarea" placeholder="Any other context? I.e. How you know them, what stood out about their profile, etc. It will be added into the cold email."></textarea>
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
                     <input type="checkbox" id="cec-include-questions" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
                     <label for="cec-include-questions" style="font-size: 13px; color: #374151; cursor: pointer; margin: 0;">Include 1-3 thoughtful questions</label>
