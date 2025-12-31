@@ -36,54 +36,84 @@ async function loadEmailPatterns() {
 }
 
 /**
- * Extract company domain from company name or LinkedIn URL
+ * Normalize company name for matching
  */
-function extractDomain(company, linkedinUrl) {
-    // Try to extract from company name (simple heuristic)
-    if (company) {
-        // Common patterns: "Google", "Goldman Sachs", "JP Morgan Chase"
-        const normalized = company.toLowerCase()
-            .replace(/[^a-z0-9]/g, '')  // Remove spaces and special chars
-            .replace(/inc$|corp$|llc$|ltd$|plc$/g, '');  // Remove corp suffixes
+function normalizeCompanyName(company) {
+    if (!company) return '';
+    return company.toLowerCase()
+        .replace(/[^a-z0-9]/g, '')  // Remove spaces and special chars
+        .replace(/inc$|corp$|llc$|ltd$|plc$/g, '');  // Remove corp suffixes
+}
 
-        // Map common company names to domains
-        const domainMappings = {
-            'google': 'google.com',
-            'amazon': 'amazon.com',
-            'microsoft': 'microsoft.com',
-            'apple': 'apple.com',
-            'meta': 'meta.com',
-            'facebook': 'facebook.com',
-            'netflix': 'netflix.com',
-            'goldmansachs': 'goldmansachs.com',
-            'jpmorgan': 'jpmorganchase.com',
-            'jpmorganchase': 'jpmorganchase.com',
-            'morganstanley': 'morganstanley.com',
-            'bankofamerica': 'bankofamerica.com',
-            'citi': 'citi.com',
-            'citigroup': 'citi.com',
-            'barclays': 'barclays.com',
-            'blackrock': 'blackrock.com',
-            'blackstone': 'blackstone.com',
-            'mckinsey': 'mckinsey.com',
-            'bcg': 'bcg.com',
-            'bain': 'bain.com',
-            'deloitte': 'deloitte.com',
-            'pwc': 'pwc.com',
-            'ey': 'ey.com',
-            'kpmg': 'kpmg.com',
-            'accenture': 'accenture.com'
-        };
+/**
+ * Fuzzy match company name against pattern database
+ * Returns the best matching domain from the database
+ */
+function fuzzyMatchCompany(company, patterns) {
+    const normalized = normalizeCompanyName(company);
+    if (!normalized) return null;
 
-        if (domainMappings[normalized]) {
-            return domainMappings[normalized];
+    // First: Try exact match on domain key
+    for (const domain in patterns) {
+        if (domain === 'default') continue;
+        const domainBase = domain.replace(/\.com$|\.io$|\.ai$/i, '');
+        if (domainBase === normalized) {
+            if (DEBUG) console.log(`Exact domain match: ${normalized} -> ${domain}`);
+            return domain;
         }
-
-        // Try simple domain guess: companyname.com
-        return `${normalized}.com`;
     }
 
+    // Second: Try fuzzy match on domain keywords
+    // e.g., "goldman sachs" should match "goldmansachs.com"
+    for (const domain in patterns) {
+        if (domain === 'default') continue;
+        const domainBase = domain.replace(/\.com$|\.io$|\.ai$/i, '');
+
+        // Check if normalized company name contains domain base or vice versa
+        if (normalized.includes(domainBase) || domainBase.includes(normalized)) {
+            // Prefer longer matches (more specific)
+            if (normalized.length >= 3 && domainBase.length >= 3) {
+                if (DEBUG) console.log(`Fuzzy match: ${normalized} -> ${domain}`);
+                return domain;
+            }
+        }
+    }
+
+    // Third: Check common abbreviations/aliases
+    const aliases = {
+        'gs': 'goldmansachs.com',
+        'jp': 'jpmorganchase.com',
+        'jpm': 'jpmorganchase.com',
+        'ms': 'morganstanley.com',
+        'bofa': 'bankofamerica.com',
+        'fb': 'facebook.com',
+        'hg': 'hg.com'
+    };
+
+    if (aliases[normalized]) {
+        if (DEBUG) console.log(`Alias match: ${normalized} -> ${aliases[normalized]}`);
+        return aliases[normalized];
+    }
+
+    // No match found - will use default pattern
     return null;
+}
+
+/**
+ * Extract company domain from company name or LinkedIn URL
+ */
+function extractDomain(company, linkedinUrl, patterns) {
+    if (!company) return null;
+
+    // Try fuzzy matching against pattern database first
+    const fuzzyMatch = fuzzyMatchCompany(company, patterns);
+    if (fuzzyMatch) {
+        return fuzzyMatch;
+    }
+
+    // Fallback: Try simple domain guess: companyname.com
+    const normalized = normalizeCompanyName(company);
+    return normalized ? `${normalized}.com` : null;
 }
 
 /**
@@ -126,7 +156,7 @@ function generateEmailFromPattern(pattern, firstName, lastName, domain) {
  */
 async function tryCompanyPattern(name, company) {
     const patterns = await loadEmailPatterns();
-    const domain = extractDomain(company);
+    const domain = extractDomain(company, null, patterns);
 
     if (!domain) {
         if (DEBUG) console.log('No domain extracted from company:', company);
@@ -158,7 +188,7 @@ async function tryCompanyPattern(name, company) {
 /**
  * Apollo.io API lookup (fallback)
  */
-async function apolloLookup(name, company) {
+async function apolloLookup(name, company, linkedinUrl) {
     const apolloApiKey = process.env.APOLLO_API_KEY;
 
     if (!apolloApiKey) {
@@ -167,6 +197,19 @@ async function apolloLookup(name, company) {
     }
 
     try {
+        const requestBody = {
+            name: name,
+            organization_name: company,
+            reveal_personal_emails: false
+        };
+
+        // Add LinkedIn URL if available for better matching
+        if (linkedinUrl) {
+            requestBody.linkedin_url = linkedinUrl;
+        }
+
+        if (DEBUG) console.log('Apollo API request:', requestBody);
+
         const response = await fetch('https://api.apollo.io/v1/people/match', {
             method: 'POST',
             headers: {
@@ -174,11 +217,7 @@ async function apolloLookup(name, company) {
                 'Cache-Control': 'no-cache',
                 'x-api-key': apolloApiKey
             },
-            body: JSON.stringify({
-                name: name,
-                organization_name: company,
-                reveal_personal_emails: false
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -269,7 +308,7 @@ export default async function handler(req, res) {
 
         // Step 2: Try Apollo.io if enabled
         if (apolloEnabled) {
-            const apolloResult = await apolloLookup(name, company);
+            const apolloResult = await apolloLookup(name, company, linkedinUrl);
             if (apolloResult) {
                 return res.status(200).json({
                     success: true,
