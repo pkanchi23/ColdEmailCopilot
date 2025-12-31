@@ -110,19 +110,11 @@ export default async function handler(req, res) {
     const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 
     try {
-      // 2. Check if user exists in database
-      const userExists = await checkUserExists(userEmail, pool);
+      // 2. Check if user exists (Optional - we now auto-provision)
+      // const userExists = await checkUserExists(userEmail, pool);
 
-      if (!userExists) {
-        if (DEBUG) console.log('User not in database:', userEmail);
-
-        return res.status(403).json({
-          error: 'Forbidden',
-          message: 'Your email address is not authorized to use this service',
-          email: userEmail,
-          hint: 'Contact your administrator to request access'
-        });
-      }
+      // Auto-provisioning flow enabled for Chrome Web Store support
+      // New users will be created in the ensureUserQuery step below with 'free' tier logic
 
       if (DEBUG) console.log('User authorized:', userEmail);
 
@@ -141,10 +133,10 @@ export default async function handler(req, res) {
       let planTier = 'free';
 
       try {
-        // Ensure user exists
+        // Ensure user exists, auto-provision with free tier ($1 limit)
         const ensureUserQuery = `
-            INSERT INTO user_profiles (email)
-            VALUES ($1)
+            INSERT INTO user_profiles (email, plan_tier)
+            VALUES ($1, 'free')
             ON CONFLICT (email) DO NOTHING;
         `;
         await pool.query(ensureUserQuery, [userEmail]);
@@ -186,7 +178,7 @@ export default async function handler(req, res) {
 
           // SPEND LIMITS
           const LIMITS = {
-            'free': 2.00,
+            'free': 1.00,
             'developer': 20.00, // Developer gets higher limit
             'paid': 10.00,
             'tester': 10.00
