@@ -1033,10 +1033,53 @@ const openModal = async () => {
 
                 if (response && response.email) {
                     console.log('[TestEmail] Success! Email found:', response.email);
-                    showToast(`✅ Email found: ${response.email} (via ${response.source}, confidence: ${response.confidence})`, 'success', 10000);
+
+                    // Build detailed waterfall message
+                    let message = `✅ Email found: ${response.email}\n\n`;
+                    message += `Source: ${response.source} (${response.confidence} confidence)\n`;
+
+                    if (response.waterfall && response.waterfall.length > 0) {
+                        message += `\n🔄 Waterfall Steps:\n`;
+                        response.waterfall.forEach((step, idx) => {
+                            if (step.step === 'pattern_match') {
+                                const matchType = step.result === 'matched' ? '✓ Fuzzy Match' : '⚠️ Fallback Guess';
+                                message += `${idx + 1}. ${matchType}: ${step.email} (${step.confidence})\n`;
+                                message += `   Domain: ${step.domain}\n`;
+                            } else if (step.step === 'apollo') {
+                                if (step.result === 'skipped') {
+                                    message += `${idx + 1}. ⏭️ Apollo: Skipped (not enabled)\n`;
+                                } else if (step.result === 'found') {
+                                    message += `${idx + 1}. ✓ Apollo: Found ${step.email}\n`;
+                                } else {
+                                    message += `${idx + 1}. ✗ Apollo: No match\n`;
+                                }
+                            }
+                        });
+                    }
+
+                    showToast(message, 'success', 15000);
                 } else if (response && response.success === false) {
                     console.log('[TestEmail] No email found, response:', response);
-                    showToast(`❌ Could not find email address: ${response.message || 'Unknown reason'}`, 'warning', 5000);
+
+                    let message = `❌ Could not find email address\n\n`;
+
+                    if (response.waterfall && response.waterfall.length > 0) {
+                        message += `🔄 Attempted:\n`;
+                        response.waterfall.forEach((step, idx) => {
+                            if (step.step === 'pattern_match') {
+                                message += `${idx + 1}. Pattern: No match\n`;
+                            } else if (step.step === 'apollo') {
+                                if (step.result === 'skipped') {
+                                    message += `${idx + 1}. Apollo: Skipped (not enabled)\n`;
+                                } else {
+                                    message += `${idx + 1}. Apollo: No match\n`;
+                                }
+                            }
+                        });
+                    }
+
+                    message += `\n${response.message || 'Unknown reason'}`;
+                    showToast(message, 'warning', 10000);
                 } else if (response && response.error) {
                     console.error('[TestEmail] Error in response:', response.error);
                     showToast(`❌ Error: ${response.error}`, 'error', 5000);

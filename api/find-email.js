@@ -297,24 +297,57 @@ export default async function handler(req, res) {
             console.log(`Email lookup for: ${name} at ${company}`);
         }
 
+        // Track waterfall steps for debugging
+        const waterfallSteps = [];
+
         // Step 1: Try company pattern matching
         const patternResult = await tryCompanyPattern(name, company);
+
+        if (patternResult) {
+            waterfallSteps.push({
+                step: 'pattern_match',
+                result: patternResult.confidence === 'low' ? 'fallback' : 'matched',
+                email: patternResult.email,
+                domain: patternResult.domain,
+                confidence: patternResult.confidence
+            });
+        }
+
         if (patternResult && patternResult.confidence !== 'low') {
             return res.status(200).json({
                 success: true,
-                ...patternResult
+                ...patternResult,
+                waterfall: waterfallSteps
             });
         }
 
         // Step 2: Try Apollo.io if enabled
+        let apolloAttempted = false;
+        let apolloResult = null;
+
         if (apolloEnabled) {
-            const apolloResult = await apolloLookup(name, company, linkedinUrl);
+            apolloAttempted = true;
+            apolloResult = await apolloLookup(name, company, linkedinUrl);
+
+            waterfallSteps.push({
+                step: 'apollo',
+                result: apolloResult ? 'found' : 'not_found',
+                email: apolloResult?.email || null
+            });
+
             if (apolloResult) {
                 return res.status(200).json({
                     success: true,
-                    ...apolloResult
+                    ...apolloResult,
+                    waterfall: waterfallSteps
                 });
             }
+        } else {
+            waterfallSteps.push({
+                step: 'apollo',
+                result: 'skipped',
+                reason: 'not_enabled'
+            });
         }
 
         // Step 3: Return pattern result even if low confidence, or null
@@ -322,7 +355,8 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 success: true,
                 ...patternResult,
-                warning: 'Low confidence pattern match'
+                warning: 'Low confidence pattern match',
+                waterfall: waterfallSteps
             });
         }
 
@@ -331,7 +365,8 @@ export default async function handler(req, res) {
             success: false,
             email: null,
             source: null,
-            message: 'Could not determine email address'
+            message: 'Could not determine email address',
+            waterfall: waterfallSteps
         });
 
     } catch (error) {
