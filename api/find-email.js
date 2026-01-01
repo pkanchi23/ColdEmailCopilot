@@ -22,7 +22,8 @@ async function loadEmailPatterns() {
         // In Vercel, we need to use dynamic import or read from file
         const fs = await import('fs');
         const path = await import('path');
-        const patternsPath = path.join(process.cwd(), 'data', 'email-patterns.json');
+        // Changed from 'data' to 'api' folder so Vercel includes it
+        const patternsPath = path.join(process.cwd(), 'api', 'email-patterns.json');
         const data = fs.readFileSync(patternsPath, 'utf8');
         emailPatterns = JSON.parse(data);
         return emailPatterns;
